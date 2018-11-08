@@ -99,9 +99,11 @@ ggplot(to_plot, aes(x = date_r, y = n,
 
 ## Content plot
 
-# Plot for content
-
 ```{r}
+liwc <- read_csv("snyc_async_tweets_liwc.csv")
+liwc <- rename(liwc, tweet_link = `Source (A)`)
+liwc_df <- left_join(liwc, df_ss)
+
 liwc_df %>% 
     select(is_sync, 
            affect,
@@ -147,10 +149,6 @@ ggsave("content.png", width = 6.75, height = 7.75)
 ## Content descriptives and stats
 
 ```{r}
-liwc <- read_csv("snyc_async_tweets_liwc.csv")
-liwc <- rename(liwc, tweet_link = `Source (A)`)
-liwc_df <- left_join(liwc, df_ss)
-
 # affect
 mean(liwc_df$affect)
 
