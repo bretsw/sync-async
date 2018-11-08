@@ -1,7 +1,5 @@
 # sync-async-manuscript
 
-Notes:
-
 - this should work best if you clone / download the repository and then open the R project (will make it easier to find the correct file paths)
 - analysis.Rmd is the main file to run
   - it contains sections associated with each of the research questions
