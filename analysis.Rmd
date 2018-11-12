@@ -1,7 +1,7 @@
 ---
 title: "Sync-Async Analysis"
-author: ""
-date: "11/9/2018"
+author: "Joshua M. Rosenberg"
+date: "11/12/2018"
 output: html_document
 ---
 
@@ -12,12 +12,12 @@ usethis::use_git_ignore("*.csv")
 
 # Loading, setting up
 
-```{r}
+```{r, include=FALSE}
 library(tidyverse)
 library(lubridate)
 library(hrbrthemes)
 # library(devtools)  # need to install if not installed
-devtools::install_github("jrosen48/tidyttest")  # only need to run once
+#devtools::install_github("jrosen48/tidyttest")  # only need to run once
 library(tidyttest)
 
 # Processing
@@ -36,9 +36,22 @@ df_ss <- mutate(df, is_sync = ifelse(SYNC > 0, 1, 0))
 ## Activity statistics and tests
 
 ```{r}
+# number of sync vs. async tweets
+df_ss$is_sync %>% length  # total number of tweets
+sync_n <- df_ss$is_sync %>% sum
+sync_n
+async_n <- df_ss$is_sync %>% length(.) - sync_n
+async_n
+
+# test if difference is significant
+chisq.test(c(sync_n, async_n))
+
 df_ss %>% 
     group_by(is_sync) %>% 
-    summarize(unique_tweeters = length(unique(tolower(screen_name))))
+    summarize(unique_tweeters =
+                  {screen_name %>% tolower %>% unique %>% length}
+              )
+chisq.test(c(9755, 1403))
 
 df_ss %>% 
     filter(type == "ORIG") %>% 
@@ -288,53 +301,43 @@ df_ss %>%
 ```{r}
 
 # t-test for favs
-
 df_ss %>% 
     filter(type == "ORIG") %>% 
     t_test(favorite_count, is_sync)
 
 # t-test for retweets
-
 df_ss %>% 
     filter(type == "ORIG") %>% 
     t_test(retweet_count, is_sync)
 
 # t-test for replies
-
 df_ss %>% 
     filter(type == "ORIG") %>% 
     t_test(scraped_num_replies, is_sync)
 
 # t-test for mentions
-
 df_ss %>% 
     filter(type == "ORIG") %>% 
     t_test(num_non_reply_mentions, is_sync)
 
 # chi-sq for quote tweets
-
 df_ss %>% 
     filter(type == "QUOTE") %>% 
     count(is_sync)
-
 chisq.test(c(8468, 1465))
 
 # t-test for hashtags
-
 df_ss %>% 
     filter(type == "ORIG") %>% 
     summarize(mean_num_hashtags = mean(num_hashtags))
-
 df_ss %>% 
     filter(type == "ORIG") %>% 
     t_test(num_hashtags, is_sync)
 
 # t-test for URLS
-
 df_ss %>% 
     filter(type == "ORIG") %>% 
     summarize(mean_urls_hashtags = mean(num_urls))
-
 df_ss %>% 
     filter(type == "ORIG") %>% 
     t_test(num_urls, is_sync)
