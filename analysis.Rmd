@@ -1,33 +1,99 @@
 ---
 title: "Sync-Async Analysis"
-author: "Joshua M. Rosenberg"
-date: "11/12/2018"
+author: "Joshua M. Rosenberg & K. Bret Staudt Willet"
+date: "2/23/2019"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-usethis::use_git_ignore("*.csv")
+usethis::use_git_ignore(c("*.csv", "*.rds"))
 ```
 
 # Loading, setting up
 
 ```{r, include=FALSE}
 library(tidyverse)
+library(rtweet)
 library(lubridate)
 library(hrbrthemes)
-# library(devtools)  # need to install if not installed
+#library(devtools)  # need to install if not installed
 #devtools::install_github("jrosen48/tidyttest")  # only need to run once
 library(tidyttest)
 
-# Processing
 
-df <- read_csv("snyc_async_tweets.csv")
+## --------------------------------------------------------------
+## Method 1
+## --------------------------------------------------------------
 
-df$date <- with_tz(df$date, tzone = "EST")
-df$SYNC[is.na(df$SYNC)] <- 0
+## Processing
+df_init <- readRDS("reths_tweets_full.rds")
+df_init %>% dim
 
-df_ss <- mutate(df, is_sync = ifelse(SYNC > 0, 1, 0))
+df <- df_init %>% 
+    distinct(status_id, .keep_all = TRUE) %>%
+    filter(status_id != "",
+           !is.na(status_id),
+           user_id != "",
+           user_id != "[deleted]",
+           text != "[deleted]",
+           text != "[removed]",
+           text != "",
+           lang=="en",
+           protected==FALSE,
+           miched==TRUE
+           ) %>%
+    mutate(date = created_at %>% with_tz(tzone = "EST"))
+df %>% dim
+#saveRDS(df, "miched_tweets_full.rds")
+
+## Initialize SYNC/ASYNC info
+df_sync_async <- read.csv("snyc_async_tweets.csv", header=TRUE, colClasses='character') %>%
+    mutate(is_sync = ifelse(SYNC=="", 0, 1),
+           status_id = tweet_link %>% gsub(".+status/", "", .)
+           )
+df_sync_async %>% dim
+
+tmp <- df %>% semi_join(df_sync_async, by='status_id')
+tmp %>% dim
+
+## problem with method 1: 
+## "reths_tweets_full.rds" and "snyc_async_tweets.csv" do not full overlap
+## the joined file loses quite a few tweets
+
+
+## --------------------------------------------------------------
+## Method 2
+## --------------------------------------------------------------
+
+## Initialize SYNC/ASYNC info
+#df_sync_async <- read.csv("snyc_async_tweets.csv", header=TRUE, colClasses='character') %>%
+#    mutate(is_sync = ifelse(SYNC=="", 0, 1),
+#           status_id = tweet_link %>% gsub(".+status/", "", .)
+#           )
+#df_sync_async %>% dim
+
+## Use rtweet::lookup_tweets to pull more complete metadata for the tweets
+#df_sync_async_full <- df_sync_async$status_id %>% lookup_tweets %>% flatten
+#saveRDS(df_sync_async_full, "snyc_async_tweets_full.rds")
+df_sync_async_full <- readRDS("snyc_async_tweets_full.rds")
+
+df_ss <- df_sync_async_full %>% 
+    distinct(status_id, .keep_all = TRUE) %>%
+    filter(status_id != "",
+           !is.na(status_id),
+           user_id != "",
+           user_id != "[deleted]",
+           text != "[deleted]",
+           text != "[removed]",
+           text != "",
+           lang=="en",
+           protected==FALSE
+           ) %>%
+    mutate(date = created_at %>% with_tz(tzone = "EST")) %>%
+    inner_join({df_sync_async %>% select(status_id, is_sync, type)},
+               by='status_id')
+df_ss %>% dim
 
 ```
 
@@ -37,10 +103,10 @@ df_ss <- mutate(df, is_sync = ifelse(SYNC > 0, 1, 0))
 
 ```{r}
 # number of sync vs. async tweets
-df_ss$is_sync %>% length  # total number of tweets
-sync_n <- df_ss$is_sync %>% sum
+df_ss %>% nrow  # total number of tweets
+sync_n <- df_ss %>% pull(is_sync) %>% sum
 sync_n
-async_n <- df_ss$is_sync %>% length(.) - sync_n
+async_n <- df_ss %>% pull(is_sync) %>% {length(.) - sync_n}
 async_n
 
 # test if difference is significant
@@ -51,7 +117,7 @@ df_ss %>%
     summarize(unique_tweeters =
                   {screen_name %>% tolower %>% unique %>% length}
               )
-chisq.test(c(9755, 1403))
+chisq.test(c(8974, 1325))
 
 df_ss %>% 
     filter(type == "ORIG") %>% 
@@ -78,16 +144,14 @@ df_ss %>%
 ```{r}
 df_ss$date_r <- df_ss$date %>% floor_date("day")
 
-to_plot <- df_ss %>% count(date_r, is_sync) %>% as.data.frame
-to_plot <- tidyr::complete(to_plot, date_r, is_sync, fill = list(n = 0))
-to_plot$during_sync_chat <- as.factor(to_plot$is_sync)
+to_plot <- df_ss %>% count(date_r, is_sync) %>% as.data.frame %>%
+    tidyr::complete(date_r, is_sync, fill = list(n = 0)) %>%
+    filter(date_r != ymd("2015-08-31")) %>%
+    mutate(date_r = date_r %>% as_date,
+           during_sync_chat = as.factor(is_sync)
+           ) 
 levels(to_plot$during_sync_chat) <- c('Not During a Chat (Asynchronous)',
                                       'During a Chat (Synchronous)')
-
-to_plot <- filter(to_plot,
-                  date_r != ymd("2015-08-31"))
-
-to_plot$date_r <- to_plot$date_r %>% as_date
 
 ggplot(to_plot, aes(x = date_r, y = n,
                     group = during_sync_chat,
