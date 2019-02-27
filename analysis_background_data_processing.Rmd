@@ -22,7 +22,78 @@ library(hrbrthemes)
 library(tidyttest)
 
 
-df_ss <- readRDS("snyc_async_tweets_full_metadata.rds")
+## --------------------------------------------------------------
+## Method 1
+## --------------------------------------------------------------
+
+## Processing
+#df_init <- readRDS("reths_tweets_full.rds")
+#df_init %>% dim
+
+#df <- df_init %>% 
+#    distinct(status_id, .keep_all = TRUE) %>%
+#    filter(status_id != "",
+#           !is.na(status_id),
+#           user_id != "",
+#           user_id != "[deleted]",
+#           text != "[deleted]",
+#           text != "[removed]",
+#           text != "",
+#           lang=="en",
+#           protected==FALSE,
+#           miched==TRUE
+#           ) %>%
+#    mutate(date = created_at %>% with_tz(tzone = "EST"))
+#df %>% dim
+#saveRDS(df, "miched_tweets_full.rds")
+
+## Initialize SYNC/ASYNC info
+#df_sync_async <- read.csv("snyc_async_tweets.csv", header=TRUE, colClasses='character') %>%
+#    mutate(is_sync = ifelse(SYNC=="", 0, 1),
+#           status_id = tweet_link %>% gsub(".+status/", "", .)
+#           )
+#df_sync_async %>% dim
+
+#tmp <- df %>% semi_join(df_sync_async, by='status_id')
+#tmp %>% dim
+
+## problem with method 1: 
+## "reths_tweets_full.rds" and "snyc_async_tweets.csv" do not full overlap
+## the joined file loses quite a few tweets
+
+
+## --------------------------------------------------------------
+## Method 2
+## --------------------------------------------------------------
+
+## Initialize SYNC/ASYNC info
+df_sync_async <- read.csv("snyc_async_tweets.csv", header=TRUE, colClasses='character') %>%
+    mutate(is_sync = ifelse(SYNC=="", 0, 1),
+           status_id = tweet_link %>% gsub(".+status/", "", .)
+           )
+df_sync_async %>% dim
+
+## Use rtweet::lookup_tweets to pull more complete metadata for the tweets
+df_sync_async_full <- df_sync_async$status_id %>% lookup_tweets %>% flatten
+
+## Now join the rtweet metadata with sync/async data
+df_ss <- df_sync_async_full %>% 
+    distinct(status_id, .keep_all = TRUE) %>%
+    filter(status_id != "",
+           !is.na(status_id),
+           user_id != "",
+           user_id != "[deleted]",
+           text != "[deleted]",
+           text != "[removed]",
+           text != "",
+           lang=="en",
+           protected==FALSE
+           ) %>%
+    mutate(date = created_at %>% with_tz(tzone = "EST")) %>%
+    inner_join({df_sync_async %>% select(status_id, is_sync, type)},
+               by='status_id')
+#saveRDS(df_ss, "snyc_async_tweets_full_metadata.rds")
+#df_ss <- readRDS("snyc_async_tweets_full_metadata.rds")
 df_ss %>% dim
 
 ```
