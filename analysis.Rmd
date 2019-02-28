@@ -14,14 +14,17 @@ usethis::use_git_ignore(c("*.csv", "*.rds"))
 
 ```{r, include=FALSE}
 library(tidyverse)
-library(rtweet)
+# library(rtweet)
 library(lubridate)
-library(hrbrthemes)
+
+#library(hrbrthemes)
 #library(devtools)  # need to install if not installed
 #devtools::install_github("jrosen48/tidyttest")  # only need to run once
 library(tidyttest)
 
+```
 
+```{r, eval = FALSE}
 ## --------------------------------------------------------------
 ## Method 1
 ## --------------------------------------------------------------
@@ -72,7 +75,9 @@ tmp %>% dim
 #           status_id = tweet_link %>% gsub(".+status/", "", .)
 #           )
 #df_sync_async %>% dim
+```
 
+```{r}
 ## Use rtweet::lookup_tweets to pull more complete metadata for the tweets
 #df_sync_async_full <- df_sync_async$status_id %>% lookup_tweets %>% flatten
 #saveRDS(df_sync_async_full, "snyc_async_tweets_full.rds")
