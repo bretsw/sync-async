@@ -16,14 +16,37 @@ usethis::use_git_ignore(c("*.csv", "*.rds"))
 library(tidyverse)
 library(rtweet)
 library(lubridate)
-library(hrbrthemes)
 #library(devtools)  # need to install if not installed
 #devtools::install_github("jrosen48/tidyttest")  # only need to run once
 library(tidyttest)
 
+#df_ss <- read_rds("snyc_async_tweets_full_metadata.rds")
+df_ss <- read_csv("snyc_async_tweets_full_metadata_liwc.csv")
 
-df_ss <- readRDS("snyc_async_tweets_full_metadata.rds")
-df_ss %>% dim
+names(df_ss)[1:91] <- c("user_id", "status_id", "created_at", "screen_name", "text", 
+"source", "display_text_width", "reply_to_status_id", "reply_to_user_id", 
+"reply_to_screen_name", "is_quote", "is_retweet", "favorite_count", 
+"retweet_count", "hashtags", "symbols", "urls_url", "urls_t.co", 
+"urls_expanded_url", "media_url", "media_t.co", "media_expanded_url", 
+"media_type", "ext_media_url", "ext_media_t.co", "ext_media_expanded_url", 
+"ext_media_type", "mentions_user_id", "mentions_screen_name", 
+"lang", "quoted_status_id", "quoted_text", "quoted_created_at", 
+"quoted_source", "quoted_favorite_count", "quoted_retweet_count", 
+"quoted_user_id", "quoted_screen_name", "quoted_name", "quoted_followers_count", 
+"quoted_friends_count", "quoted_statuses_count", "quoted_location", 
+"quoted_description", "quoted_verified", "retweet_status_id", 
+"retweet_text", "retweet_created_at", "retweet_source", "retweet_favorite_count", 
+"retweet_retweet_count", "retweet_user_id", "retweet_screen_name", 
+"retweet_name", "retweet_followers_count", "retweet_friends_count", 
+"retweet_statuses_count", "retweet_location", "retweet_description", 
+"retweet_verified", "place_url", "place_name", "place_full_name", 
+"place_type", "country", "country_code", "geo_coords", "coords_coords", 
+"bbox_coords", "status_url", "name", "location", "description", 
+"url", "protected", "followers_count", "friends_count", "listed_count", 
+"statuses_count", "favourites_count", "account_created_at", "verified", 
+"profile_url", "profile_expanded_url", "account_lang", "profile_banner_url", 
+"profile_background_url", "profile_image_url", "date", "is_sync", 
+"type")
 
 ```
 
@@ -34,9 +57,14 @@ df_ss %>% dim
 ```{r}
 # number of sync vs. async tweets
 df_ss %>% nrow  # total number of tweets
-sync_n <- df_ss %>% pull(is_sync) %>% sum
+
+sync_n <- df_ss %>% pull(is_sync) %>% sum # add parentheses for functions
 sync_n
-async_n <- df_ss %>% pull(is_sync) %>% {length(.) - sync_n}
+
+# here is another way to write this:
+df_ss %>% count(is_sync)
+
+async_n <- df_ss %>% pull(is_sync) %>% {length(.) - sync_n} # use parentheses here
 async_n
 
 # test if difference is significant
@@ -45,8 +73,9 @@ chisq.test(c(sync_n, async_n))
 df_ss %>% 
     group_by(is_sync) %>% 
     summarize(unique_tweeters =
-                  {screen_name %>% tolower %>% unique %>% length}
+                  {screen_name %>% tolower %>% unique %>% length} # I'd suggest avoiding this if possible; one way may be to mutate the variable to be formatted the way you need it to before you get to the summarize
               )
+
 chisq.test(c(8974, 1325))
 
 df_ss %>% 
@@ -96,10 +125,9 @@ ggplot(to_plot, aes(x = date_r, y = n,
                               by = "2 months"),
                  date_labels = "%b %g") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    hrbrthemes::theme_ipsum(base_size = 12) +
     theme(legend.position = "bottom")
 
-# ggsave("async-sync-time-series.png", width = 7, height = 5)
+ggsave("async-sync-time-series.png", width = 7, height = 5)
 ```
 
 # RQ2: Content
@@ -234,13 +262,14 @@ liwc_df %>%
 ### Plot we use
 
 ```{r}
+df_ss$mentions_count <- sapply(str_split(df_ss$mentions_screen_name, " "), length)
 
 df_ss %>% 
     select(is_sync, 
            favorite_count,
            retweet_count, 
-           scraped_num_replies,
-           num_non_reply_mentions) %>% 
+           reply_count,
+           mentions_count) %>% 
     rename(Likes = favorite_count,
            Retweets = retweet_count,
            Replies = scraped_num_replies,
@@ -342,6 +371,8 @@ df_ss %>%
 ## Portals plot
 
 ```{r}
+df_ss$hashtags_count <- sapply(str_split(df_ss$hashtags, " "), length)
+df_ss$urls_count <- sapply(str_split(df_ss$urls_url, " "), length)
 
 df_ss %>% 
     select(is_sync, 
