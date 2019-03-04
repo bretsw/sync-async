@@ -149,12 +149,12 @@ df_ss$mentions_count <- sapply(str_split(df_ss$mentions_screen_name, " "), lengt
 df_ss$hashtags_count <- sapply(str_split(df_ss$hashtags, " "), length)
 df_ss$urls_count <- sapply(str_split(df_ss$urls_url, " "), length)
 
-df_ss %>% 
+prepped_data <- df_ss %>% 
     filter(type == "ORIG",
            !is.na(is_sync)) %>% 
-    mutate(reply_to_status_id = status_id)
+    mutate(reply_to_status_id = status_id) %>% 
     left_join(reply_tweets) %>% 
-    mutate(replies_count = if_else(is.na(replies_count), 0, replies_count))
+    mutate(replies_count = ifelse(is.na(replies_count), 0, replies_count)) %>% 
     select(is_sync,
            social, cogproc, posemo, negemo, work,
            favorite_count, retweet_count, replies_count, mentions_count,
@@ -169,7 +169,9 @@ df_ss %>%
            Replies = replies_count,
            Mentions = mentions_count) %>% 
     rename(Hashtags = hashtags_count,
-           URLs = urls_count) %>% 
+           URLs = urls_count)
+
+mean_stats <- prepped_data %>% 
     group_by(is_sync) %>% 
     summarize_all(funs(mean, sd, n())) %>% 
     gather(key, val, -is_sync) %>% 
@@ -179,274 +181,46 @@ df_ss %>%
     mutate(is_sync = factor(is_sync, labels = c("Asynchronous", "Synchronous"))) %>% 
     mutate(mean_se = str_c(round(mean, 3), " (", round(se, 3), ")")) %>% 
     select(is_sync, var, mean_se) %>% 
-    spread(is_sync, mean_se)
+    spread(is_sync, mean_se) %>% 
+    mutate(group = c(
+        "content",
+        "portals",
+        "interactions",
+        "interactions",
+        "content",
+        "content",
+        "interactions",
+        "interactions", 
+        "content", 
+        "interactions",
+        "content"
+    )) %>% 
+    arrange(group, var)
 ```
 
-# RQ2: Content
-
-## Content Plot: Sync vs. Async
+# t-tests
 
 ```{r}
-df_ss$mentions_count <- sapply(str_split(df_ss$mentions_screen_name, " "), length)
-df_ss$hashtags_count <- sapply(str_split(df_ss$hashtags, " "), length)
-df_ss$urls_count <- sapply(str_split(df_ss$urls_url, " "), length)
+test_data <- prepped_data %>% 
+    select(-is_sync) %>% 
+    map(~ t.test(. ~ prepped_data$is_sync)) %>% 
+    map_df(broom::tidy) %>% 
+    mutate(var = names(prepped_data[, -1]))
 
-df_ss %>% 
-    filter(type == "ORIG",
-           !is.na(is_sync)) %>% 
-    rename(Social = social,
-           `Cognitive Processing` = cogproc,
-           `Positive affect` = posemo,
-           `Negative affect` = negemo,
-           `Work-related Concerns` = work) %>% 
-            select(is_sync, 
-           favorite_count,
-           retweet_count, 
-           reply_count,
-           mentions_count,) %>% 
-    rename(Likes = favorite_count,
-           Retweets = retweet_count,
-           Replies = scraped_num_replies,
-           Mentions = num_non_reply_mentions) %>% 
-    rename(Hashtags = num_hashtags,
-           URLs = num_urls) %>% 
-    group_by(is_sync) %>% 
-    summarize_all(funs(mean, sd, n())) %>% 
-    gather(key, val, -is_sync) %>% 
-    separate(key, c("var", "stat"), sep = "\\_") %>% 
-    spread(stat, val) %>% 
-    mutate(se = sd / sqrt(n - 1)) %>% 
-    mutate(is_sync = factor(is_sync, labels = c("Asynchronous", "Synchronous"))) %>% 
-    mutate(mean_se = str_c(round(mean, 3), " (", round(se, 3), ")")) %>% 
-    select(is_sync, var, mean_se) %>% 
-    spread(is_sync, mean_se)
+test_data_joined <- test_data %>% 
+    mutate(t = ifelse(p.value > .001, str_c(round(statistic, 3), " p = (", round(p.value, 3), ")"),
+                      str_c(round(statistic, 3), " p < .001")),
+           d = compute.es::tes(test_data$statistic, n.1 = 27361, n.2 = 8744, verbose = F)$d,
+           d = abs(d)) %>% 
+    select(var, t, d)
 ```
 
-## Content descriptives and stats
+# Joining tables
 
 ```{r}
-# affect
-mean(df_ss$affect)
-
-df_ss %>%
-    filter(type == "ORIG")
-
-# social
-mean(df_ss$social)
-
-df_ss %>%
-    filter(type == "ORIG") %>% 
-    t_test(social, is_sync)
-
-# cogproc
-mean(df_ss$cogproc)
-
-df_ss %>%
-    filter(type == "ORIG") %>% 
-    t_test(cogproc, is_sync)
-
-# percept
-mean(df_ss$percept)
-
-df_ss %>%
-    filter(type == "ORIG") %>% 
-    t_test(percept, is_sync)
-
-# bio
-mean(df_ss$bio)
-
-df_ss %>%
-    filter(type == "ORIG") %>% 
-    t_test(bio, is_sync)
-
-# drives
-mean(df_ss$drives)
-
-df_ss %>%
-    filter(type == "ORIG") %>% 
-    t_test(drives, is_sync)
-
-# time orientation
-mean(df_ss$time)
-
-df_ss %>%
-    filter(type == "ORIG") %>% 
-    t_test(time, is_sync)
-
-# relativity
-mean(df_ss$relativ)
-
-df_ss %>%
-    filter(type == "ORIG") %>% 
-    t_test(relativ, is_sync)
-
-# personal concerns - work
-mean(df_ss$work)
-
-df_ss %>%
-    filter(type == "ORIG") %>% 
-    t_test(work, is_sync)
-
-# informal
-mean(df_ss$informal)
-
-df_ss %>%
-    filter(type == "ORIG") %>% 
-    t_test(informal, is_sync)
-```
-
-# RQ3: Interactions
-
-## Interactions Plot: Retweets, Likes, Mentions, Replies
-
-### Plot we use
-
-```{r}
-df_ss$mentions_count <- sapply(str_split(df_ss$mentions_screen_name, " "), length)
-
-df_ss %>% 
-    select(is_sync, 
-           favorite_count,
-           retweet_count, 
-           reply_count,
-           mentions_count) %>% 
-    rename(Likes = favorite_count,
-           Retweets = retweet_count,
-           Replies = scraped_num_replies,
-           Mentions = num_non_reply_mentions) %>% 
-    group_by(is_sync) %>% 
-    summarize_all(funs(mean, sd, n())) %>% 
-    gather(key, val, -is_sync) %>% 
-    separate(key, c("var", "stat")) %>% 
-    spread(stat, val) %>% 
-    mutate(se = sd / sqrt(n - 1)) %>% 
-    mutate(is_sync = factor(is_sync, labels = c("Asynchronous", "Synchronous"))) %>% 
-    ggplot(aes(x = reorder(var, mean), y = mean, fill = is_sync)) +
-    geom_col(position = "dodge") +
-    geom_errorbar(aes(ymin = mean - se, 
-                      ymax = mean + se),
-                  position = position_dodge()) +
-    viridis::scale_fill_viridis("", discrete = T, option = "D") +
-    coord_flip() +
-    hrbrthemes::theme_ipsum(base_size = 12) +
-    theme(legend.position="top") +
-    xlab(NULL) +
-    ylab("Mean Per Tweet")
-
-# ggsave("interactions.png", width = 5.5, height = 6)
-```
-
-### Not sure if we use this one so this code isn't run right now
-
-```{r, eval = FALSE}
-#df_orig <- df_ss %>% filter(type == "ORIG")
-
-#df_orig %>%
-    group_by(is_sync, type) %>% 
-    select(is_sync, 
-           favorites = scraped_num_favorites, 
-           retweets = retweet_count, 
-           replies = scraped_num_replies, 
-           mentions = num_non_reply_mentions, 
-           hashtag = num_hashtags) %>% 
-        group_by(is_sync) %>% 
-        summarize_all(mean) %>% 
-        gather(key, val, -is_sync) %>% 
-        mutate(is_sync = as.factor(is_sync)) %>% 
-        ggplot(aes(x = reorder(key, val), y = val, fill = is_sync)) +
-        geom_col(position = "dodge") + 
-        coord_flip() +
-        hrbrthemes::theme_ipsum()
-```
-
-## Interactions descriptives and statistical tests
-
-```{r}
-
-# t-test for favs
-df_ss %>% 
-    filter(type == "ORIG") %>% 
-    t_test(favorite_count, is_sync)
-
-# t-test for retweets
-df_ss %>% 
-    filter(type == "ORIG") %>% 
-    t_test(retweet_count, is_sync)
-
-# t-test for replies
-df_ss %>% 
-    filter(type == "ORIG") %>% 
-    t_test(scraped_num_replies, is_sync)
-
-# t-test for mentions
-df_ss %>% 
-    filter(type == "ORIG") %>% 
-    t_test(num_non_reply_mentions, is_sync)
-
-# chi-sq for quote tweets
-df_ss %>% 
-    filter(type == "QUOTE") %>% 
-    count(is_sync)
-chisq.test(c(8468, 1465))
-
-# t-test for hashtags
-df_ss %>% 
-    filter(type == "ORIG") %>% 
-    summarize(mean_num_hashtags = mean(num_hashtags))
-df_ss %>% 
-    filter(type == "ORIG") %>% 
-    t_test(num_hashtags, is_sync)
-
-# t-test for URLS
-df_ss %>% 
-    filter(type == "ORIG") %>% 
-    summarize(mean_urls_hashtags = mean(num_urls))
-df_ss %>% 
-    filter(type == "ORIG") %>% 
-    t_test(num_urls, is_sync)
-```
-
-# RQ4: Portals
-
-## Portals plot
-
-```{r}
-df_ss %>%
-    select(is_sync, 
-           num_hashtags,
-           num_urls) %>% 
-    rename(Hashtags = num_hashtags,
-           URLs = num_urls) %>% 
-    group_by(is_sync) %>% 
-    summarize_all(funs(mean, sd, n())) %>% 
-    gather(key, val, -is_sync) %>% 
-    separate(key, c("var", "stat")) %>% 
-    spread(stat, val) %>% 
-    mutate(se = sd / sqrt(n - 1)) %>% 
-    mutate(is_sync = factor(is_sync, labels = c("Asynchronous", "Synchronous"))) %>% 
-    ggplot(aes(x = reorder(var, mean), y = mean, fill = is_sync)) +
-    geom_col(position = "dodge") +
-    geom_errorbar(aes(ymin = mean - se, 
-                      ymax = mean + se),
-                  position = position_dodge()) +
-    viridis::scale_fill_viridis("", discrete = T, option = "D") +
-    coord_flip() +
-    hrbrthemes::theme_ipsum(base_size = 10) +
-    theme(legend.position="top") +
-    xlab(NULL) +
-    ylab("Mean Per Tweet")
-
-# ggsave("portals.png", width = 5, height = 4.35)
-```
-
-## Portals descriptive stats and statistical tests
-
-```{r}
-df_ss %>% 
-    filter(type == "ORIG") %>% 
-    summarize(mean_urls_hashtags = mean(num_urls))
-
-df_ss %>% 
-    filter(type == "ORIG") %>% 
-    t_test(num_urls, is_sync)
+mean_stats %>% 
+    left_join(test_data_joined, by = "var") %>% 
+    select(group, var, Asynchronous, Synchronous, t, d) %>% 
+    arrange(group, d) %>% 
+    write_csv("combined-table.csv")
 ```
