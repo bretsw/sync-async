@@ -51,6 +51,7 @@ names(df_ss)[92:ncol(df_ss)] <- c("WC", "Analytic", "Clout", "Authentic", "Tone"
 sync_n <- df_ss %>% 
     pull(is_sync) %>%
     sum # add parentheses for functions
+
 sync_n
 
 # here is another way to write this:
@@ -92,6 +93,15 @@ df_ss %>%
     filter(type == "ORIG") %>% 
     rename(number_of_orig_tweets = n) %>%  
     t_test(number_of_orig_tweets, is_sync)
+
+df_ss %>% count(screen_name, is_sync) %>% count(screen_name) %>% count(n) 
+only_one <- df_ss %>% count(screen_name, is_sync) %>% count(screen_name) %>% filter(n == 1)
+both <- df_ss %>% count(screen_name, is_sync) %>% count(screen_name) %>% filter(n == 2)
+
+df_ss %>% 
+    semi_join(only_one)
+
+chisq.test(c(8137, 488))
 ```
 
 ## Activity Plot: Sync vs. Async
@@ -126,55 +136,90 @@ ggplot(to_plot, aes(x = date_r, y = n,
 ggsave("async-sync-time-series.png", width = 7, height = 5)
 ```
 
-# RQ2: Content
-
-## Content Plot: Sync vs. Async
+# All analyses - creating a table
 
 ```{r}
-df_liwc <- df_ss %>% 
-    filter(type == "ORIG") %>% 
-    select(is_sync, 
-           affect,
-           social,
-           cogproc,
-           percept,
-           bio,
-           drives,
-           time,
-           work) %>% 
-    rename(Affect = affect,
-           Social = social,
+reply_tweets <- df_ss %>% 
+    filter(type == "REPLY") %>% 
+    count(reply_to_status_id) %>% 
+    rename(replies_count = n)
+
+# move to a mutate
+df_ss$mentions_count <- sapply(str_split(df_ss$mentions_screen_name, " "), length) 
+df_ss$hashtags_count <- sapply(str_split(df_ss$hashtags, " "), length)
+df_ss$urls_count <- sapply(str_split(df_ss$urls_url, " "), length)
+
+df_ss %>% 
+    filter(type == "ORIG",
+           !is.na(is_sync)) %>% 
+    mutate(reply_to_status_id = status_id)
+    left_join(reply_tweets) %>% 
+    mutate(replies_count = if_else(is.na(replies_count), 0, replies_count))
+    select(is_sync,
+           social, cogproc, posemo, negemo, work,
+           favorite_count, retweet_count, replies_count, mentions_count,
+           hashtags_count, urls_count) %>% 
+    rename(Social = social,
            `Cognitive Processing` = cogproc,
-           `Perceptual Processes` = percept,
-           `Biological Processes` = bio,
-           Drives = drives,
-           `Time Orientation` = time,
-           `Work-related Concerns` = work)
-    
-
-
-    filter(!is.na(is_sync)) %>% 
+           `Positive affect` = posemo,
+           `Negative affect` = negemo,
+           `Work-related Concerns` = work) %>% 
+    rename(Likes = favorite_count,
+           Retweets = retweet_count,
+           Replies = replies_count,
+           Mentions = mentions_count) %>% 
+    rename(Hashtags = hashtags_count,
+           URLs = urls_count) %>% 
     group_by(is_sync) %>% 
     summarize_all(funs(mean, sd, n())) %>% 
     gather(key, val, -is_sync) %>% 
     separate(key, c("var", "stat"), sep = "\\_") %>% 
     spread(stat, val) %>% 
     mutate(se = sd / sqrt(n - 1)) %>% 
-    mutate(is_sync = factor(is_sync, labels = c("Asynchronous", "Synchronous")))
+    mutate(is_sync = factor(is_sync, labels = c("Asynchronous", "Synchronous"))) %>% 
+    mutate(mean_se = str_c(round(mean, 3), " (", round(se, 3), ")")) %>% 
+    select(is_sync, var, mean_se) %>% 
+    spread(is_sync, mean_se)
+```
 
-    # ggplot(aes(x = reorder(var, mean), y = mean, fill = is_sync)) +
-    # geom_col(position = "dodge") +
-    # geom_errorbar(aes(ymin = mean - se, 
-    #                   ymax = mean + se),
-    #               position = position_dodge()) +
-    # viridis::scale_fill_viridis("", discrete = T, option = "D") +
-    # coord_flip() +
-    # theme(legend.position="top") +
-    # xlab(NULL) +
-    # ylab("Mean Per Tweet")
+# RQ2: Content
 
-#ggsave("content.png", width = 6.75, height = 7.75)
+## Content Plot: Sync vs. Async
 
+```{r}
+df_ss$mentions_count <- sapply(str_split(df_ss$mentions_screen_name, " "), length)
+df_ss$hashtags_count <- sapply(str_split(df_ss$hashtags, " "), length)
+df_ss$urls_count <- sapply(str_split(df_ss$urls_url, " "), length)
+
+df_ss %>% 
+    filter(type == "ORIG",
+           !is.na(is_sync)) %>% 
+    rename(Social = social,
+           `Cognitive Processing` = cogproc,
+           `Positive affect` = posemo,
+           `Negative affect` = negemo,
+           `Work-related Concerns` = work) %>% 
+            select(is_sync, 
+           favorite_count,
+           retweet_count, 
+           reply_count,
+           mentions_count,) %>% 
+    rename(Likes = favorite_count,
+           Retweets = retweet_count,
+           Replies = scraped_num_replies,
+           Mentions = num_non_reply_mentions) %>% 
+    rename(Hashtags = num_hashtags,
+           URLs = num_urls) %>% 
+    group_by(is_sync) %>% 
+    summarize_all(funs(mean, sd, n())) %>% 
+    gather(key, val, -is_sync) %>% 
+    separate(key, c("var", "stat"), sep = "\\_") %>% 
+    spread(stat, val) %>% 
+    mutate(se = sd / sqrt(n - 1)) %>% 
+    mutate(is_sync = factor(is_sync, labels = c("Asynchronous", "Synchronous"))) %>% 
+    mutate(mean_se = str_c(round(mean, 3), " (", round(se, 3), ")")) %>% 
+    select(is_sync, var, mean_se) %>% 
+    spread(is_sync, mean_se)
 ```
 
 ## Content descriptives and stats
@@ -366,10 +411,7 @@ df_ss %>%
 ## Portals plot
 
 ```{r}
-df_ss$hashtags_count <- sapply(str_split(df_ss$hashtags, " "), length)
-df_ss$urls_count <- sapply(str_split(df_ss$urls_url, " "), length)
-
-df_ss %>% 
+df_ss %>%
     select(is_sync, 
            num_hashtags,
            num_urls) %>% 
