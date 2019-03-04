@@ -192,11 +192,7 @@ mean_stats <- prepped_data %>%
         "interactions",
         "interactions", 
         "content", 
-<<<<<<< HEAD
         "portals",
-=======
-        "interactions",
->>>>>>> 9168b157e0f042b73f9ef76263d8b88d0350e6f7
         "content"
     )) %>% 
     arrange(group, var)
@@ -218,6 +214,25 @@ test_data_joined <- test_data %>%
            d = compute.es::tes(test_data$statistic, n.1 = 27361, n.2 = 8744, verbose = F)$d,
            d = abs(d)) %>% 
     select(var, t, d)
+```
+
+# Hotelling's test
+
+```{r}
+# content
+prepped_data1 <- select(prepped_data, is_sync:`Work-related Concerns`)
+fit1 = hotelling.test(. ~ is_sync, data = prepped_data1)
+fit1
+
+# interactions
+prepped_data2 <- select(prepped_data, is_sync, Likes:Mentions)
+fit2 = hotelling.test(. ~ is_sync, data = prepped_data2)
+fit2
+
+# portals
+prepped_data3 <- select(prepped_data, is_sync, Hashtags, URLs)
+fit3 = hotelling.test(. ~ is_sync, data = prepped_data3)
+fit3
 ```
 
 # Joining tables
