@@ -192,7 +192,11 @@ mean_stats <- prepped_data %>%
         "interactions",
         "interactions", 
         "content", 
+<<<<<<< HEAD
         "portals",
+=======
+        "interactions",
+>>>>>>> 9168b157e0f042b73f9ef76263d8b88d0350e6f7
         "content"
     )) %>% 
     arrange(group, var)
