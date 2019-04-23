@@ -12,6 +12,12 @@ usethis::use_git_ignore(c("*.csv", "*.rds"))
 
 # Loading, setting up
 
+```{r, eval = FALSE}
+library(osfr) # must have generated an API token from an OSF account that has been added to the repository here: https://developer.osf.io/#tag/General-Usage
+osf_retrieve_file("https://osf.io/ktm2s/") %>% 
+    osf_download()
+```
+
 ```{r, include=FALSE}
 library(tidyverse)
 library(rtweet)
@@ -24,44 +30,44 @@ library(tidyttest)
 df_ss <- read_csv("snyc_async_tweets_full_metadata_liwc.csv", skip=1)
 
 names(df_ss)[1:91] <- c("user_id", "status_id", "created_at", "screen_name", "text", 
-"source", "display_text_width", "reply_to_status_id", "reply_to_user_id", 
-"reply_to_screen_name", "is_quote", "is_retweet", "favorite_count", 
-"retweet_count", "hashtags", "symbols", "urls_url", "urls_t.co", 
-"urls_expanded_url", "media_url", "media_t.co", "media_expanded_url", 
-"media_type", "ext_media_url", "ext_media_t.co", "ext_media_expanded_url", 
-"ext_media_type", "mentions_user_id", "mentions_screen_name", 
-"lang", "quoted_status_id", "quoted_text", "quoted_created_at", 
-"quoted_source", "quoted_favorite_count", "quoted_retweet_count", 
-"quoted_user_id", "quoted_screen_name", "quoted_name", "quoted_followers_count", 
-"quoted_friends_count", "quoted_statuses_count", "quoted_location", 
-"quoted_description", "quoted_verified", "retweet_status_id", 
-"retweet_text", "retweet_created_at", "retweet_source", "retweet_favorite_count", 
-"retweet_retweet_count", "retweet_user_id", "retweet_screen_name", 
-"retweet_name", "retweet_followers_count", "retweet_friends_count", 
-"retweet_statuses_count", "retweet_location", "retweet_description", 
-"retweet_verified", "place_url", "place_name", "place_full_name", 
-"place_type", "country", "country_code", "geo_coords", "coords_coords", 
-"bbox_coords", "status_url", "name", "location", "description", 
-"url", "protected", "followers_count", "friends_count", "listed_count", 
-"statuses_count", "favourites_count", "account_created_at", "verified", 
-"profile_url", "profile_expanded_url", "account_lang", "profile_banner_url", 
-"profile_background_url", "profile_image_url", "date", "is_sync", 
-"type")
+                        "source", "display_text_width", "reply_to_status_id", "reply_to_user_id", 
+                        "reply_to_screen_name", "is_quote", "is_retweet", "favorite_count", 
+                        "retweet_count", "hashtags", "symbols", "urls_url", "urls_t.co", 
+                        "urls_expanded_url", "media_url", "media_t.co", "media_expanded_url", 
+                        "media_type", "ext_media_url", "ext_media_t.co", "ext_media_expanded_url", 
+                        "ext_media_type", "mentions_user_id", "mentions_screen_name", 
+                        "lang", "quoted_status_id", "quoted_text", "quoted_created_at", 
+                        "quoted_source", "quoted_favorite_count", "quoted_retweet_count", 
+                        "quoted_user_id", "quoted_screen_name", "quoted_name", "quoted_followers_count", 
+                        "quoted_friends_count", "quoted_statuses_count", "quoted_location", 
+                        "quoted_description", "quoted_verified", "retweet_status_id", 
+                        "retweet_text", "retweet_created_at", "retweet_source", "retweet_favorite_count", 
+                        "retweet_retweet_count", "retweet_user_id", "retweet_screen_name", 
+                        "retweet_name", "retweet_followers_count", "retweet_friends_count", 
+                        "retweet_statuses_count", "retweet_location", "retweet_description", 
+                        "retweet_verified", "place_url", "place_name", "place_full_name", 
+                        "place_type", "country", "country_code", "geo_coords", "coords_coords", 
+                        "bbox_coords", "status_url", "name", "location", "description", 
+                        "url", "protected", "followers_count", "friends_count", "listed_count", 
+                        "statuses_count", "favourites_count", "account_created_at", "verified", 
+                        "profile_url", "profile_expanded_url", "account_lang", "profile_banner_url", 
+                        "profile_background_url", "profile_image_url", "date", "is_sync", 
+                        "type")
 
 names(df_ss)[92:ncol(df_ss)] <- c("WC", "Analytic", "Clout", "Authentic", "Tone", "WPS", "Sixltr", 
-"Dic", "function", "pronoun", "ppron", "i", "we", "you", "shehe", 
-"they", "ipron", "article", "prep", "auxverb", "adverb", "conj", 
-"negate", "verb", "adj", "compare", "interrog", "number", "quant", 
-"affect", "posemo", "negemo", "anx", "anger", "sad", "social", 
-"family", "friend", "female", "male", "cogproc", "insight", "cause", 
-"discrep", "tentat", "certain", "differ", "percept", "see", "hear", 
-"feel", "bio", "body", "health", "sexual", "ingest", "drives", 
-"affiliation", "achieve", "power", "reward", "risk", "focuspast", 
-"focuspresent", "focusfuture", "relativ", "motion", "space", 
-"time", "work", "leisure", "home", "money", "relig", "death", 
-"informal", "swear", "netspeak", "assent", "nonflu", "filler", 
-"AllPunc", "Period", "Comma", "Colon", "SemiC", "QMark", "Exclam", 
-"Dash", "Quote", "Apostro", "Parenth", "OtherP")
+                                  "Dic", "function", "pronoun", "ppron", "i", "we", "you", "shehe", 
+                                  "they", "ipron", "article", "prep", "auxverb", "adverb", "conj", 
+                                  "negate", "verb", "adj", "compare", "interrog", "number", "quant", 
+                                  "affect", "posemo", "negemo", "anx", "anger", "sad", "social", 
+                                  "family", "friend", "female", "male", "cogproc", "insight", "cause", 
+                                  "discrep", "tentat", "certain", "differ", "percept", "see", "hear", 
+                                  "feel", "bio", "body", "health", "sexual", "ingest", "drives", 
+                                  "affiliation", "achieve", "power", "reward", "risk", "focuspast", 
+                                  "focuspresent", "focusfuture", "relativ", "motion", "space", 
+                                  "time", "work", "leisure", "home", "money", "relig", "death", 
+                                  "informal", "swear", "netspeak", "assent", "nonflu", "filler", 
+                                  "AllPunc", "Period", "Comma", "Colon", "SemiC", "QMark", "Exclam", 
+                                  "Dash", "Quote", "Apostro", "Parenth", "OtherP")
 
 ```
 
@@ -98,23 +104,23 @@ async_tweeters_n <- tweeters_df %>% filter(is_sync==0) %>% pull(unique_tweeters)
 sync_tweeters_n; async_tweeters_n
 
 both <- df_ss %>% count(screen_name, is_sync) %>% 
-    count(screen_name) %>% filter(nn == 2)
+    count(screen_name) %>% filter(n == 2)
 both_n <- both %>% nrow()
 
 only_one <- df_ss %>% count(screen_name, is_sync) %>% 
-    count(screen_name) %>% filter(nn == 1)
+    count(screen_name) %>% filter(n == 1)
 
 sync_only_n <- df_ss %>% semi_join(only_one, by="screen_name") %>%
     mutate(screen_name = screen_name %>% tolower) %>%
     filter(is_sync==1) %>%
     count(screen_name, is_sync) %>% 
-    count(screen_name) %>% filter(nn == 1) %>% 
+    count(screen_name) %>% filter(n == 1) %>% 
     nrow()
 async_only_n <- df_ss %>% semi_join(only_one, by="screen_name") %>%
     mutate(screen_name = screen_name %>% tolower) %>%
     filter(is_sync==0) %>%
     count(screen_name, is_sync) %>% 
-    count(screen_name) %>% filter(nn == 1) %>% 
+    count(screen_name) %>% filter(n == 1) %>% 
     nrow()
 paste("Both:", both_n); paste("Sync Only:", sync_only_n); paste("Async Only:", async_only_n)
 
@@ -143,23 +149,33 @@ df_ss %>%
 ## Activity Plot: Sync vs. Async
 
 ```{r}
-df_ss$date_r <- df_ss$date %>% floor_date("day")
+df_ss$created_at_m <- df_ss$created_at + lubridate::hours(4)
+df_ss$date_r <- df_ss$created_at_m %>% floor_date("day")
 
 to_plot <- df_ss %>% count(date_r, is_sync) %>% as.data.frame %>%
     tidyr::complete(date_r, is_sync, fill = list(n = 0)) %>%
     filter(date_r != ymd("2015-08-31")) %>%
     mutate(date_r = date_r %>% as_date,
            during_sync_chat = as.factor(is_sync)
-           ) 
+    ) 
 levels(to_plot$during_sync_chat) <- c('Not During a Chat (Asynchronous)',
                                       'During a Chat (Synchronous)')
 
-ggplot(to_plot, aes(x = date_r, y = n,
-                    group = during_sync_chat,
-                    color = during_sync_chat)) +
-    geom_point(size = 1.25) +
-    geom_line(size = .7) +
-    scale_color_brewer("", type = "qual", palette = 6) +
+to_plot_sync <- filter(to_plot, is_sync == 1)
+to_plot_sync <- mutate(to_plot_sync, n = ifelse(n == 0, NA, n))
+to_plot_async <- filter(to_plot, is_sync == 0)
+
+p <- ggplot(to_plot) +
+    geom_point(data = to_plot_async, aes(x = date_r, y = n,
+                                         group = during_sync_chat,
+                                         color = during_sync_chat), size = 1.25) +
+    geom_line(data = to_plot_async, aes(x = date_r, y = n,
+                                        group = during_sync_chat,
+                                        color = during_sync_chat), size = .7) +
+    geom_point(data = to_plot_sync, aes(x = date_r, y = n,
+                                        group = during_sync_chat,
+                                        color = during_sync_chat), shape = 8, size = 1.25) +
+    scale_color_brewer("", type = "qual", palette = 2) +
     xlab(NULL) +
     ylab("Number of Tweets") +
     scale_x_date(breaks = seq(as.Date("2015-09-01", tz = "America/Detroit"),
@@ -167,7 +183,10 @@ ggplot(to_plot, aes(x = date_r, y = n,
                               by = "2 months"),
                  date_labels = "%b %g") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") +
+    theme_bw()
+
+p
 
 ggsave("async-sync-time-series.png", width = 7, height = 5)
 ```
@@ -184,7 +203,7 @@ df_ss <- df_ss %>%
     mutate(mentions_count = sapply(str_split(df_ss$mentions_screen_name, " "), length),
            hashtags_count = sapply(str_split(df_ss$hashtags, " "), length), 
            urls_count = sapply(str_split(df_ss$urls_url, " "), length)
-           )
+    )
 
 is.na(df_ss$is_sync) %>% which()  # check to make sure there are no NAs
 
