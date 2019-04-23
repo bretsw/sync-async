@@ -149,7 +149,7 @@ df_ss %>%
 ## Activity Plot: Sync vs. Async
 
 ```{r}
-df_ss$created_at_m <- df_ss$created_at + lubridate::hours(4)
+df_ss$created_at_m <- df_ss$created_at - lubridate::hours(5)
 df_ss$date_r <- df_ss$created_at_m %>% floor_date("day")
 
 to_plot <- df_ss %>% count(date_r, is_sync) %>% as.data.frame %>%
