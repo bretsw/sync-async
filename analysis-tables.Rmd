@@ -14,8 +14,8 @@ usethis::use_git_ignore(c("*.csv", "*.rds"))
 
 ```{r, eval = FALSE}
 library(osfr) # must have generated an API token from an OSF account that has been added to the repository here: https://developer.osf.io/#tag/General-Usage
-osf_retrieve_file("https://osf.io/ktm2s/") %>% 
-    osf_download()
+osf_retrieve_file("https://osf.io/ktm2s/?pid=m25zy") %>% 
+    osf_download(path = "sync-async-dataset.csv", overwrite = TRUE)
 ```
 
 ```{r, include=FALSE}
@@ -27,7 +27,7 @@ library(Hotelling)
 #devtools::install_github("jrosen48/tidyttest")  # only need to run once
 library(tidyttest)
 
-df_ss <- read_csv("snyc_async_tweets_full_metadata_liwc.csv", skip=1)
+df_ss <- read_csv("sync-async-dataset.csv", skip=1)
 
 names(df_ss)[1:91] <- c("user_id", "status_id", "created_at", "screen_name", "text", 
                         "source", "display_text_width", "reply_to_status_id", "reply_to_user_id", 
