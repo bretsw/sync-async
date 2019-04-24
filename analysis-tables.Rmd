@@ -11,13 +11,6 @@ usethis::use_git_ignore(c("*.csv", "*.rds"))
 ```
 
 # Loading, setting up
-
-```{r, eval = FALSE}
-library(osfr) # must have generated an API token from an OSF account that has been added to the repository here: https://developer.osf.io/#tag/General-Usage
-osf_retrieve_file("https://osf.io/ktm2s/?pid=m25zy") %>% 
-    osf_download(path = "sync-async-dataset.csv", overwrite = TRUE)
-```
-
 ```{r, include=FALSE}
 library(tidyverse)
 library(rtweet)
@@ -26,7 +19,22 @@ library(Hotelling)
 #library(devtools)  # need to install if not installed
 #devtools::install_github("jrosen48/tidyttest")  # only need to run once
 library(tidyttest)
+```
 
+```{r, eval = FALSE}
+library(osfr) 
+# must have generated an API token from an OSF account that has been added to the repository here: https://developer.osf.io/#tag/General-Usage
+# > usethis::edit_r_environ() to add token to .renviron file
+# add 2 lines, replacing <token> with your token: 
+#       curl -X "GET" "https://api.osf.io/v2/users/me/" \
+#       -H "Authorization: Bearer <token>"
+
+osf_retrieve_file("https://osf.io/ktm2s/?pid=m25zy") %>% 
+    osf_download(path = "sync-async-dataset.csv", overwrite = TRUE)
+```
+
+
+```{r, include=FALSE}
 df_ss <- read_csv("sync-async-dataset.csv", skip=1)
 
 names(df_ss)[1:91] <- c("user_id", "status_id", "created_at", "screen_name", "text", 
