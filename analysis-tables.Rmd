@@ -24,12 +24,16 @@ library(tidyttest)
 ```
 
 ```{r, eval = FALSE}
+#devtools::install_github("centerforopenscience/osfr")   # only need to run once
 library(osfr) 
 # must have generated an API token from an OSF account that has been added to the repository here: https://developer.osf.io/#tag/General-Usage
-# > usethis::edit_r_environ() to add token to .renviron file
-# add 2 lines, replacing <token> with your token: 
-#       curl -X "GET" "https://api.osf.io/v2/users/me/" \
-#       -H "Authorization: Bearer <token>"
+# Should see this message:
+# "Automatically registered OSF personal access token"
+
+# First time setup: (http://centerforopenscience.github.io/osfr/articles/auth.html)
+#usethis::edit_r_environ(scope='project')  # to add token to .renviron file
+#  Add 1 line, replacing <token> with your token: 
+#OSF_PAT="<token>"
 
 osf_retrieve_file("https://osf.io/ktm2s/?pid=m25zy") %>% 
     osf_download(path = "sync-async-dataset.csv", overwrite = TRUE)
