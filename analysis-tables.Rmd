@@ -87,6 +87,23 @@ names(df_ss)[92:ncol(df_ss)] <- c("WC", "Analytic", "Clout", "Authentic", "Tone"
 
 ```
 
+Checking type
+
+```{r}
+proc_tweets <- function(d) {
+  d %>%
+    mutate(mentions_count = map_int(mentions_screen_name, length),
+           hashtags_count = map_int(str_split(as.character(hashtags), " "), length),
+           urls_count = map_int(str_split(as.character(urls_url), " "), length),
+           is_reply = if_else(!is.na(reply_to_status_id), TRUE, FALSE),
+           is_orig = if_else(!is_reply & !is_quote & !is_retweet, TRUE, FALSE))
+}
+
+df_ss <- proc_tweets(df_ss)
+
+df_ss %>% count(is_retweet, is_quote, is_reply, is_orig, type)
+```
+
 # RQ1: Activity
 
 ## Activity statistics and tests
@@ -244,7 +261,7 @@ chisq.test(rbind(c(sync_only_original, async_only_original, both_original_),
 **Mean number of original tweets per tweeter**
 
 ```{r}
-df_ss %>% filter(type == "ORIG") %>% count(is_sync)
+df_ss %>% filter() %>% count(is_sync)
 
 #df_ss %>% 
 #    filter(type == "ORIG") %>% 
