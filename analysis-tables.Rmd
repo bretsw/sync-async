@@ -19,13 +19,15 @@ library(Hotelling)
 #library(devtools)  # need to install if not installed
 #devtools::install_github("jrosen48/tidyttest")  # only need to run once
 library(tidyttest)
-
-
+# devtools::install_github("centerforopenscience/osfr")   # only need to run once
+library(osfr) 
 ```
 
+# Load data 
+
+Only need to run once, then the file should be downloaded to your working directory. 
+
 ```{r, eval = FALSE}
-#devtools::install_github("centerforopenscience/osfr")   # only need to run once
-library(osfr) 
 # must have generated an API token from an OSF account that has been added to the repository here: https://developer.osf.io/#tag/General-Usage
 # Should see this message:
 # "Automatically registered OSF personal access token"
@@ -36,7 +38,7 @@ library(osfr)
 #OSF_PAT="<token>"
 
 osf_retrieve_file("https://osf.io/ktm2s/?pid=m25zy") %>% 
-    osf_download(path = "sync-async-dataset.csv", overwrite = TRUE)
+    osf_download(path = "sync-async-dataset.csv")
 ```
 
 
