@@ -96,7 +96,7 @@ proc_tweets <- function(d) {
            hashtags_count = map_int(str_split(as.character(hashtags), " "), length),
            urls_count = map_int(str_split(as.character(urls_url), " "), length),
            is_reply = if_else(!is.na(reply_to_status_id), TRUE, FALSE),
-           is_orig = if_else(!is_reply & !is_quote & !is_retweet, TRUE, FALSE))
+           is_orig = if_else(!is_retweet, TRUE, FALSE))
 }
 
 df_ss <- proc_tweets(df_ss)
