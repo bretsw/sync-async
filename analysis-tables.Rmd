@@ -7,6 +7,10 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, ignoring-files}
+# only have to run once
 usethis::use_git_ignore(c("*.csv", "*.rds"))
 ```
 
@@ -16,6 +20,7 @@ library(tidyverse)
 library(rtweet)
 library(lubridate)
 library(Hotelling)
+library(janitor)
 #library(devtools)  # need to install if not installed
 #devtools::install_github("jrosen48/tidyttest")  # only need to run once
 library(tidyttest)
