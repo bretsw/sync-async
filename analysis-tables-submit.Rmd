@@ -28,8 +28,6 @@ library(Hotelling)
 #library(devtools)  # need to install if not installed
 #devtools::install_github("jrosen48/tidyttest")  # only need to run once
 library(tidyttest)
-
-
 ```
 
 ## Setting up rosf
@@ -51,6 +49,8 @@ osf_retrieve_file("https://osf.io/ktm2s/?pid=m25zy") %>%
 ```
 
 ## Loading the data
+
+Note that we first processed data collected via TAGS in order to obtain the tweet IDs, which we then passed to the `lookup_statuses()` rtweet function. That code is in `analysis-background_data_processing.Rmd`.
 
 ```{r, include=FALSE}
 df_ss <- read_csv("sync-async-dataset.csv", skip=1)
@@ -205,7 +205,7 @@ df_oo <- df_ss %>% mutate(type = ifelse(type == "RETWEET", 0, 1))
 tweeters_df <- df_oo %>% 
     mutate(screen_name = screen_name %>% tolower) %>%
     group_by(is_sync) %>% 
-    summarize(unique_tweeters = (screen_name %>% unique %>% length))
+    summarize(unique_tweeters = (screen_name %>% unique %>% length)) # this can be replaced with n()
 
 sync_tweeters_n <- tweeters_df %>% 
     filter(is_sync==1) %>% 
