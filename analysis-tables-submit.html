@@ -426,7 +426,8 @@ osf_retrieve_file(&quot;https://osf.io/ktm2s/?pid=m25zy&quot;) %&gt;%
 <div id="processing-the-data" class="section level2">
 <h2>Processing the data</h2>
 <pre class="r"><code>reply_tweets &lt;- df_ss %&gt;% 
-    filter(type==&quot;REPLY&quot;) %&gt;% 
+    mutate(is_reply = !is.na(reply_to_status_id)) %&gt;% 
+    filter(is_reply) %&gt;% 
     count(reply_to_status_id) %&gt;% 
     rename(replies_count = n)
 
@@ -677,7 +678,7 @@ fit1</code></pre>
 prepped_data2 &lt;- select(prepped_data, is_sync, Likes:Mentions)
 fit2 = hotelling.test(. ~ is_sync, data = prepped_data2)
 fit2</code></pre>
-<pre><code>## Test stat:  1169.2 
+<pre><code>## Test stat:  1129.8 
 ## Numerator df:  4 
 ## Denominator df:  36100 
 ## P-value:  0</code></pre>
@@ -760,7 +761,7 @@ combined_table</code></pre>
 ##  4 content    Negative affect 0.805 (0.014) 0.884 (0.02… 2.443 p = (…  0.03
 ##  5 content    Work-related C… 6.911 (0.037) 6.977 (0.07… 0.785 p = (…  0.01
 ##  6 interacti… Mentions        1.244 (0.004) 1.04 (0.003) 40.926 p &lt; …  0.5 
-##  7 interacti… Replies         0.032 (0.001) 0.216 (0.00… 32.515 p &lt; …  0.4 
+##  7 interacti… Replies         0.036 (0.001) 0.216 (0.00… 31.744 p &lt; …  0.39
 ##  8 interacti… Retweets        1.088 (0.015) 0.586 (0.01… 24.774 p &lt; …  0.3 
 ##  9 interacti… Likes           1.365 (0.016) 1.88 (0.023) 18.045 p &lt; …  0.22
 ## 10 portals    Hashtags        2.183 (0.008) 1.221 (0.00… 94.93 p &lt; .…  1.17

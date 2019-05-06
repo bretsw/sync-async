@@ -100,7 +100,8 @@ names(df_ss)[92:ncol(df_ss)] <- c("WC", "Analytic", "Clout", "Authentic", "Tone"
 
 ```{r}
 reply_tweets <- df_ss %>% 
-    filter(type=="REPLY") %>% 
+    mutate(is_reply = !is.na(reply_to_status_id)) %>% 
+    filter(is_reply) %>% 
     count(reply_to_status_id) %>% 
     rename(replies_count = n)
 
