@@ -2,15 +2,24 @@
 title: "Sync-Async Analysis"
 author: "Joshua M. Rosenberg, K. Bret Staudt Willet, & Spencer P. Greenhalgh"
 date: "4/24/2019"
-output: html_document
+output: 
+    html_document:
+        toc: true
+        float_toc: true
+        number_sections: true
 ---
+
+# Loading the data and setting up
+
+This section loads the data and packages and starts to process the data, but doesn't calculate any statistics or create any results.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 usethis::use_git_ignore(c("*.csv", "*.rds"))
 ```
 
-# Loading, setting up
+## Loading packages
+
 ```{r, include=FALSE}
 library(tidyverse)
 library(rtweet)
@@ -22,6 +31,8 @@ library(tidyttest)
 
 
 ```
+
+## Setting up rosf
 
 ```{r, eval = FALSE}
 #devtools::install_github("centerforopenscience/osfr")   # only need to run once
@@ -39,6 +50,7 @@ osf_retrieve_file("https://osf.io/ktm2s/?pid=m25zy") %>%
     osf_download(path = "sync-async-dataset.csv", overwrite = TRUE)
 ```
 
+## Loading the data
 
 ```{r, include=FALSE}
 df_ss <- read_csv("sync-async-dataset.csv", skip=1)
@@ -85,9 +97,90 @@ names(df_ss)[92:ncol(df_ss)] <- c("WC", "Analytic", "Clout", "Authentic", "Tone"
 
 ```
 
+## Processing the data
+
+```{r}
+reply_tweets <- df_ss %>% 
+    filter(type=="REPLY") %>% 
+    count(reply_to_status_id) %>% 
+    rename(replies_count = n)
+
+df_ss <- df_ss %>% 
+    mutate(mentions_count = sapply(str_split(df_ss$mentions_screen_name, " "), length),
+           hashtags_count = sapply(str_split(df_ss$hashtags, " "), length), 
+           urls_count = sapply(str_split(df_ss$urls_url, " "), length)
+    )
+
+is.na(df_ss$is_sync) %>% which()  # check to make sure there are no NAs
+
+prepped_data <- df_ss %>% 
+    filter(type=="ORIG") %>% 
+    mutate(reply_to_status_id = status_id) %>% 
+    left_join(reply_tweets, by = "reply_to_status_id") %>% 
+    mutate(replies_count = ifelse(is.na(replies_count), 0, replies_count)) %>% 
+    select(is_sync,
+           social, cogproc, posemo, negemo, work,
+           favorite_count, retweet_count, replies_count, 
+           mentions_count, hashtags_count, urls_count) %>% 
+    rename(Social = social,
+           `Cognitive Processing` = cogproc,
+           `Positive affect` = posemo,
+           `Negative affect` = negemo,
+           `Work-related Concerns` = work) %>% 
+    rename(Likes = favorite_count,
+           Retweets = retweet_count,
+           Replies = replies_count,
+           Mentions = mentions_count) %>% 
+    rename(Hashtags = hashtags_count,
+           URLs = urls_count)
+```
+
 # RQ1: Activity
 
-## Activity statistics and tests
+## Plot: Sync vs. Async
+
+```{r}
+df_ss$created_at_m <- df_ss$created_at - lubridate::hours(5)
+df_ss$date_r <- df_ss$created_at_m %>% floor_date("day")
+
+to_plot <- df_ss %>% count(date_r, is_sync) %>% as.data.frame %>%
+    tidyr::complete(date_r, is_sync, fill = list(n = 0)) %>%
+    filter(date_r != ymd("2015-08-31")) %>%
+    mutate(date_r = date_r %>% as_date,
+           during_sync_chat = as.factor(is_sync)
+    ) 
+levels(to_plot$during_sync_chat) <- c('Not During a Chat (Asynchronous)',
+                                      'During a Chat (Synchronous)')
+
+to_plot_sync <- filter(to_plot, is_sync == 1)
+to_plot_sync <- mutate(to_plot_sync, n = ifelse(n == 0, NA, n))
+to_plot_async <- filter(to_plot, is_sync == 0)
+
+p <- ggplot(to_plot) +
+    geom_point(data = to_plot_async, aes(x = date_r, y = n,
+                                         group = during_sync_chat,
+                                         color = during_sync_chat), size = 1.25) +
+    geom_line(data = to_plot_async, aes(x = date_r, y = n,
+                                        group = during_sync_chat,
+                                        color = during_sync_chat), size = .7) +
+    geom_point(data = to_plot_sync, aes(x = date_r, y = n,
+                                        group = during_sync_chat,
+                                        color = during_sync_chat), shape = 8, size = 1.25) +
+    scale_color_brewer("", type = "qual", palette = 2) +
+    xlab(NULL) +
+    ylab("Number of Tweets") +
+    scale_x_date(breaks = seq(as.Date("2015-09-01", tz = "America/Detroit"),
+                              as.Date("2016-08-31", tz = "America/Detroit"),
+                              by = "2 months"),
+                 date_labels = "%b %g") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    theme(legend.position = "bottom") +
+    theme_bw()
+
+p
+
+ggsave("async-sync-time-series.png", width = 7, height = 5)
+```
 
 **Number of synchronous vs. asynchronous tweets:**
 
@@ -113,16 +206,29 @@ tweeters_df <- df_oo %>%
     mutate(screen_name = screen_name %>% tolower) %>%
     group_by(is_sync) %>% 
     summarize(unique_tweeters = (screen_name %>% unique %>% length))
-sync_tweeters_n <- tweeters_df %>% filter(is_sync==1) %>% pull(unique_tweeters)
-async_tweeters_n <- tweeters_df %>% filter(is_sync==0) %>% pull(unique_tweeters)
+
+sync_tweeters_n <- tweeters_df %>% 
+    filter(is_sync==1) %>% 
+    pull(unique_tweeters)
+
+async_tweeters_n <- tweeters_df %>%
+    filter(is_sync==0) %>% 
+    pull(unique_tweeters)
+
 sync_tweeters_n; async_tweeters_n
 
-both <- df_oo %>% count(screen_name, is_sync) %>% 
-    count(screen_name) %>% filter(n == 2)
-both_n <- both %>% nrow()
+both <- df_oo %>% 
+    count(screen_name, is_sync) %>% 
+    count(screen_name) %>% 
+    filter(n == 2)
 
-only_one <- df_oo %>% count(screen_name, is_sync) %>% 
-    count(screen_name) %>% filter(n == 1)
+both_n <- both %>% 
+    nrow()
+
+only_one <- df_oo %>% 
+    count(screen_name, is_sync) %>% 
+    count(screen_name) %>% 
+    filter(n == 1)
 
 sync_only_n <- df_oo %>% semi_join(only_one, by="screen_name") %>%
     mutate(screen_name = screen_name %>% tolower) %>%
@@ -140,37 +246,43 @@ async_only_n <- df_oo %>% semi_join(only_one, by="screen_name") %>%
 
 paste("Both:", both_n); paste("Sync Only:", sync_only_n); paste("Async Only:", async_only_n)
 
-only_one_original <- df_oo %>% count(screen_name, type) %>% 
-    count(screen_name) %>% filter(n == 1)
+only_one_original <- df_oo %>% 
+    count(screen_name, type) %>% 
+    count(screen_name) %>% 
+    filter(n == 1)
 
-both_original <- df_oo %>% count(screen_name, type) %>% 
-    count(screen_name) %>% filter(n == 2)
+both_original <- df_oo %>% 
+    count(screen_name, type) %>% 
+    count(screen_name) %>% 
+    filter(n == 2)
 
 both_original_n <- both_original %>% nrow()
 
 sync_only_original <- df_oo %>% # starts with _oo dataframe
     semi_join(only_one, by="screen_name") %>% 
     semi_join(only_one_original, by ="screen_name") %>%
-    mutate(screen_name = screen_name %>% tolower) %>%
-    filter(is_sync==1 & type== 1) %>%
+    mutate(screen_name = tolower(screen_name)) %>% # this is maybe a bit easier to reason about than below
+    # mutate(screen_name = screen_name %>% tolower) %>%  
     count(screen_name, is_sync) %>% 
     count(screen_name) %>% filter(n == 1) %>% 
     nrow()
 
 sync_only_nonoriginal <- df_oo %>% semi_join(only_one, by="screen_name") %>%
     semi_join(only_one_original, by ="screen_name") %>%
-    mutate(screen_name = screen_name %>% tolower) %>%
+    mutate(screen_name = tolower(screen_name)) %>%
     filter(is_sync==1 & type == 0) %>%
     count(screen_name, is_sync) %>% 
-    count(screen_name) %>% filter(n == 1) %>% 
+    count(screen_name) %>% 
+    filter(n == 1) %>% 
     nrow()
 
 sync_only_both <- df_oo %>% semi_join(both_original, by="screen_name") %>%
     semi_join(only_one, by ="screen_name") %>%
-    mutate(screen_name = screen_name %>% tolower) %>%
+    mutate(screen_name = tolower(screen_name)) %>%
     filter(is_sync==1) %>%
     count(screen_name, is_sync) %>% 
-    count(screen_name) %>% filter(n == 1) %>% 
+    count(screen_name) %>% 
+    filter(n == 1) %>% 
     nrow()
 
 paste("Total Sync:", sync_only_n); paste("Sync, Original Only", sync_only_original); paste("Sync, Nonoriginal Only", sync_only_nonoriginal); paste("Sync, Original and Nonoriginal", sync_only_both); paste("Total Check:", sync_only_original + sync_only_nonoriginal + sync_only_both)
@@ -232,8 +344,6 @@ paste("Total Both:", both_n); paste("Both, Original Only", both_original_); past
 chisq.test(rbind(c(sync_only_original, async_only_original, both_original_),
                  c(sync_only_nonoriginal, async_only_nonoriginal, both_nonoriginal),
                  c(sync_only_both, async_only_both, both_both)))
-
-
 ```
 
 **Mean number of original tweets per tweeter**
@@ -255,88 +365,7 @@ df_ss %>%
     t_test(number_of_orig_tweets, is_sync)
 ```
 
-## Activity Plot: Sync vs. Async
-
-```{r}
-df_ss$created_at_m <- df_ss$created_at - lubridate::hours(5)
-df_ss$date_r <- df_ss$created_at_m %>% floor_date("day")
-
-to_plot <- df_ss %>% count(date_r, is_sync) %>% as.data.frame %>%
-    tidyr::complete(date_r, is_sync, fill = list(n = 0)) %>%
-    filter(date_r != ymd("2015-08-31")) %>%
-    mutate(date_r = date_r %>% as_date,
-           during_sync_chat = as.factor(is_sync)
-    ) 
-levels(to_plot$during_sync_chat) <- c('Not During a Chat (Asynchronous)',
-                                      'During a Chat (Synchronous)')
-
-to_plot_sync <- filter(to_plot, is_sync == 1)
-to_plot_sync <- mutate(to_plot_sync, n = ifelse(n == 0, NA, n))
-to_plot_async <- filter(to_plot, is_sync == 0)
-
-p <- ggplot(to_plot) +
-    geom_point(data = to_plot_async, aes(x = date_r, y = n,
-                                         group = during_sync_chat,
-                                         color = during_sync_chat), size = 1.25) +
-    geom_line(data = to_plot_async, aes(x = date_r, y = n,
-                                        group = during_sync_chat,
-                                        color = during_sync_chat), size = .7) +
-    geom_point(data = to_plot_sync, aes(x = date_r, y = n,
-                                        group = during_sync_chat,
-                                        color = during_sync_chat), shape = 8, size = 1.25) +
-    scale_color_brewer("", type = "qual", palette = 2) +
-    xlab(NULL) +
-    ylab("Number of Tweets") +
-    scale_x_date(breaks = seq(as.Date("2015-09-01", tz = "America/Detroit"),
-                              as.Date("2016-08-31", tz = "America/Detroit"),
-                              by = "2 months"),
-                 date_labels = "%b %g") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    theme(legend.position = "bottom") +
-    theme_bw()
-
-p
-
-ggsave("async-sync-time-series.png", width = 7, height = 5)
-```
-
-## Preparing the data
-
-```{r}
-reply_tweets <- df_ss %>% 
-    filter(type=="REPLY") %>% 
-    count(reply_to_status_id) %>% 
-    rename(replies_count = n)
-
-df_ss <- df_ss %>% 
-    mutate(mentions_count = sapply(str_split(df_ss$mentions_screen_name, " "), length),
-           hashtags_count = sapply(str_split(df_ss$hashtags, " "), length), 
-           urls_count = sapply(str_split(df_ss$urls_url, " "), length)
-    )
-
-is.na(df_ss$is_sync) %>% which()  # check to make sure there are no NAs
-
-prepped_data <- df_ss %>% 
-    filter(type=="ORIG") %>% 
-    mutate(reply_to_status_id = status_id) %>% 
-    left_join(reply_tweets, by = "reply_to_status_id") %>% 
-    mutate(replies_count = ifelse(is.na(replies_count), 0, replies_count)) %>% 
-    select(is_sync,
-           social, cogproc, posemo, negemo, work,
-           favorite_count, retweet_count, replies_count, 
-           mentions_count, hashtags_count, urls_count) %>% 
-    rename(Social = social,
-           `Cognitive Processing` = cogproc,
-           `Positive affect` = posemo,
-           `Negative affect` = negemo,
-           `Work-related Concerns` = work) %>% 
-    rename(Likes = favorite_count,
-           Retweets = retweet_count,
-           Replies = replies_count,
-           Mentions = mentions_count) %>% 
-    rename(Hashtags = hashtags_count,
-           URLs = urls_count)
-```
+# RQs 2-4: Content, Interactions, Portals
 
 ## Hotelling's test
 
@@ -359,9 +388,7 @@ fit3 = hotelling.test(. ~ is_sync, data = prepped_data3)
 fit3
 ```
 
-# RQ2: Content; RQ3: Interaction; RQ4: Portals
-
-## Creating a table
+This creates a table for the subsequent analyses.
 
 ```{r}
 mean_stats <- prepped_data %>% 
@@ -412,6 +439,8 @@ test_data_joined <- test_data %>%
 ```
 
 ## Joining Tables
+
+This prints the table and also writes it to a CSV, so that it can be added to the manuscript separately.
 
 ```{r}
 combined_table <- mean_stats %>% 
