@@ -52,9 +52,9 @@ osf_retrieve_file("https://osf.io/ktm2s/?pid=m25zy") %>%
 Note that we first processed data collected via TAGS in order to obtain the tweet IDs, which we then passed to the `lookup_statuses()` rtweet function. That code is in `analysis-background_data_processing.Rmd`.
 
 ```{r, include=FALSE}
-df_ss <- read_csv("sync-async-dataset.csv", skip=1)
+d <- read_csv("sync-async-dataset.csv", skip=1)
 
-names(df_ss)[1:91] <- c("user_id", "status_id", "created_at", "screen_name", "text", 
+names(d)[1:91] <- c("user_id", "status_id", "created_at", "screen_name", "text", 
                         "source", "display_text_width", "reply_to_status_id", "reply_to_user_id", 
                         "reply_to_screen_name", "is_quote", "is_retweet", "favorite_count", 
                         "retweet_count", "hashtags", "symbols", "urls_url", "urls_t.co", 
@@ -79,7 +79,7 @@ names(df_ss)[1:91] <- c("user_id", "status_id", "created_at", "screen_name", "te
                         "profile_background_url", "profile_image_url", "date", "is_sync", 
                         "type")
 
-names(df_ss)[92:ncol(df_ss)] <- c("WC", "Analytic", "Clout", "Authentic", "Tone", "WPS", "Sixltr", 
+names(d)[92:ncol(d)] <- c("WC", "Analytic", "Clout", "Authentic", "Tone", "WPS", "Sixltr", 
                                   "Dic", "function", "pronoun", "ppron", "i", "we", "you", "shehe", 
                                   "they", "ipron", "article", "prep", "auxverb", "adverb", "conj", 
                                   "negate", "verb", "adj", "compare", "interrog", "number", "quant", 
@@ -99,22 +99,22 @@ names(df_ss)[92:ncol(df_ss)] <- c("WC", "Analytic", "Clout", "Authentic", "Tone"
 ## Processing the data
 
 ```{r}
-reply_tweets <- df_ss %>% 
+reply_tweets <- d %>% 
     mutate(is_reply = !is.na(reply_to_status_id)) %>% 
     filter(is_reply) %>% 
     count(reply_to_status_id) %>% 
     rename(replies_count = n)
 
-df_ss <- df_ss %>% 
-    mutate(mentions_count = sapply(str_split(df_ss$mentions_screen_name, " "), length),
-           hashtags_count = sapply(str_split(df_ss$hashtags, " "), length), 
-           urls_count = sapply(str_split(df_ss$urls_url, " "), length)
+d <- d %>% 
+    mutate(mentions_count = sapply(str_split(d$mentions_screen_name, " "), length),
+           hashtags_count = sapply(str_split(d$hashtags, " "), length), 
+           urls_count = sapply(str_split(d$urls_url, " "), length)
     )
 
-is.na(df_ss$is_sync) %>% which()  # check to make sure there are no NAs
+is.na(d$is_sync) %>% which()  # check to make sure there are no NAs
 
-prepped_data <- df_ss %>% 
-    filter(type=="ORIG") %>% 
+prepped_data <- d %>% 
+    filter(!is_retweet) %>% 
     mutate(reply_to_status_id = status_id) %>% 
     left_join(reply_tweets, by = "reply_to_status_id") %>% 
     mutate(replies_count = ifelse(is.na(replies_count), 0, replies_count)) %>% 
@@ -140,10 +140,10 @@ prepped_data <- df_ss %>%
 ## Plot: Sync vs. Async
 
 ```{r}
-df_ss$created_at_m <- df_ss$created_at - lubridate::hours(5)
-df_ss$date_r <- df_ss$created_at_m %>% floor_date("day")
+d$created_at_m <- d$created_at - lubridate::hours(5)
+d$date_r <- d$created_at_m %>% floor_date("day")
 
-to_plot <- df_ss %>% count(date_r, is_sync) %>% as.data.frame %>%
+to_plot <- d %>% count(date_r, is_sync) %>% as.data.frame %>%
     tidyr::complete(date_r, is_sync, fill = list(n = 0)) %>%
     filter(date_r != ymd("2015-08-31")) %>%
     mutate(date_r = date_r %>% as_date,
@@ -185,12 +185,12 @@ ggsave("async-sync-time-series.png", width = 7, height = 5)
 ## Number of synchronous vs. asynchronous tweets
 
 ```{r}
-df_ss %>% nrow()  # total number of tweets
-#df_ss %>% janitor::tabyl(is_sync)
-sync_n <- df_ss %>% janitor::tabyl(is_sync) %>% filter(is_sync==1) %>% pull(n)
-async_n <- df_ss %>% janitor::tabyl(is_sync) %>% filter(is_sync==0) %>% pull(n)
+d %>% nrow()  # total number of tweets
+#d %>% janitor::tabyl(is_sync)
+sync_n <- d %>% janitor::tabyl(is_sync) %>% filter(is_sync==1) %>% pull(n)
+async_n <- d %>% janitor::tabyl(is_sync) %>% filter(is_sync==0) %>% pull(n)
 sync_n; async_n
-#(sync_n + async_n) - (df_ss %>% nrow())  # make sure all rows are accounted for
+#(sync_n + async_n) - (d %>% nrow())  # make sure all rows are accounted for
 ## test if difference is significant
 chisq.test(c(sync_n, async_n))
 ```
@@ -199,38 +199,38 @@ chisq.test(c(sync_n, async_n))
 
 ```{r}
 ## Number of distinct tweeters
-df_ss %>% pull(screen_name) %>% tolower() %>% unique() %>% length()
-tweeters_df <- df_ss %>% 
+d %>% pull(screen_name) %>% tolower() %>% unique() %>% length()
+tweeters_df <- d %>% 
     mutate(screen_name = screen_name %>% tolower) %>%
     group_by(is_sync) %>% 
     summarize(unique_tweeters = (screen_name %>% unique %>% length))
 sync_tweeters_n <- tweeters_df %>% filter(is_sync==1) %>% pull(unique_tweeters)
 async_tweeters_n <- tweeters_df %>% filter(is_sync==0) %>% pull(unique_tweeters)
 sync_tweeters_n; async_tweeters_n
-both <- df_ss %>% count(screen_name, is_sync) %>% 
+both <- d %>% count(screen_name, is_sync) %>% 
     count(screen_name) %>% filter(n == 2)
 both_n <- both %>% nrow()
-only_one <- df_ss %>% count(screen_name, is_sync) %>% 
+only_one <- d %>% count(screen_name, is_sync) %>% 
     count(screen_name) %>% filter(n == 1)
-sync_only_n <- df_ss %>% semi_join(only_one, by="screen_name") %>%
+sync_only_n <- d %>% semi_join(only_one, by="screen_name") %>%
     mutate(screen_name = screen_name %>% tolower) %>%
     filter(is_sync==1) %>%
     count(screen_name, is_sync) %>% 
     count(screen_name) %>% filter(n == 1) %>% 
     nrow()
-async_only_n <- df_ss %>% semi_join(only_one, by="screen_name") %>%
+async_only_n <- d %>% semi_join(only_one, by="screen_name") %>%
     mutate(screen_name = screen_name %>% tolower) %>%
     filter(is_sync==0) %>%
     count(screen_name, is_sync) %>% 
     count(screen_name) %>% filter(n == 1) %>% 
     nrow()
 paste("Both:", both_n); paste("Sync Only:", sync_only_n); paste("Async Only:", async_only_n)
-only_one_original <- df_ss %>% count(screen_name, is_retweet) %>% 
+only_one_original <- d %>% count(screen_name, is_retweet) %>% 
     count(screen_name) %>% filter(n == 1)
-both_original <- df_ss %>% count(screen_name, is_retweet) %>% 
+both_original <- d %>% count(screen_name, is_retweet) %>% 
     count(screen_name) %>% filter(n == 2)
 both_original_n <- both_original %>% nrow()
-sync_only_original <- df_ss %>%
+sync_only_original <- d %>%
     semi_join(only_one, by="screen_name") %>% 
     semi_join(only_one_original, by ="screen_name") %>%
     mutate(screen_name = screen_name %>% tolower) %>%
@@ -238,14 +238,14 @@ sync_only_original <- df_ss %>%
     count(screen_name, is_sync) %>% 
     count(screen_name) %>% filter(n == 1) %>% 
     nrow()
-sync_only_nonoriginal <- df_ss %>% semi_join(only_one, by="screen_name") %>%
+sync_only_nonoriginal <- d %>% semi_join(only_one, by="screen_name") %>%
     semi_join(only_one_original, by ="screen_name") %>%
     mutate(screen_name = screen_name %>% tolower) %>%
     filter(is_sync==1 & is_retweet) %>%
     count(screen_name, is_sync) %>% 
     count(screen_name) %>% filter(n == 1) %>% 
     nrow()
-sync_only_both <- df_ss %>% semi_join(both_original, by="screen_name") %>%
+sync_only_both <- d %>% semi_join(both_original, by="screen_name") %>%
     semi_join(only_one, by ="screen_name") %>%
     mutate(screen_name = screen_name %>% tolower) %>%
     filter(is_sync==1) %>%
@@ -253,7 +253,7 @@ sync_only_both <- df_ss %>% semi_join(both_original, by="screen_name") %>%
     count(screen_name) %>% filter(n == 1) %>% 
     nrow()
 paste("Total Sync:", sync_only_n); paste("Sync, Original Only", sync_only_original); paste("Sync, Nonoriginal Only", sync_only_nonoriginal); paste("Sync, Original and Nonoriginal", sync_only_both); paste("Total Check:", sync_only_original + sync_only_nonoriginal + sync_only_both)
-async_only_original <- df_ss %>% 
+async_only_original <- d %>% 
     semi_join(only_one, by="screen_name") %>% 
     semi_join(only_one_original, by ="screen_name") %>%
     mutate(screen_name = screen_name %>% tolower) %>%
@@ -261,14 +261,14 @@ async_only_original <- df_ss %>%
     count(screen_name, is_sync) %>% 
     count(screen_name) %>% filter(n == 1) %>% 
     nrow()
-async_only_nonoriginal <- df_ss %>% semi_join(only_one, by="screen_name") %>%
+async_only_nonoriginal <- d %>% semi_join(only_one, by="screen_name") %>%
     semi_join(only_one_original, by ="screen_name") %>%
     mutate(screen_name = screen_name %>% tolower) %>%
     filter(is_sync==0 & is_retweet) %>%
     count(screen_name, is_sync) %>% 
     count(screen_name) %>% filter(n == 1) %>% 
     nrow()
-async_only_both <- df_ss %>% semi_join(both_original, by="screen_name") %>%
+async_only_both <- d %>% semi_join(both_original, by="screen_name") %>%
     semi_join(only_one, by ="screen_name") %>%
     mutate(screen_name = screen_name %>% tolower) %>%
     filter(is_sync==0) %>%
@@ -276,7 +276,7 @@ async_only_both <- df_ss %>% semi_join(both_original, by="screen_name") %>%
     count(screen_name) %>% filter(n == 1) %>% 
     nrow()
 paste("Total Async:", async_only_n); paste("Async, Original Only", async_only_original); paste("Async, Nonoriginal Only", async_only_nonoriginal); paste("Async, Original and Nonoriginal", async_only_both); paste("Total Check:", async_only_original + async_only_nonoriginal + async_only_both)
-both_original_ <- df_ss %>% 
+both_original_ <- d %>% 
     semi_join(both, by="screen_name") %>% 
     semi_join(only_one_original, by ="screen_name") %>%
     mutate(screen_name = screen_name %>% tolower) %>%
@@ -284,7 +284,7 @@ both_original_ <- df_ss %>%
     count(screen_name, is_retweet) %>% 
     count(screen_name) %>% 
     nrow()
-both_nonoriginal <- df_ss %>% semi_join(both, by="screen_name") %>%
+both_nonoriginal <- d %>% semi_join(both, by="screen_name") %>%
     semi_join(both, by="screen_name") %>% 
     semi_join(only_one_original, by ="screen_name") %>%
     mutate(screen_name = screen_name %>% tolower) %>%
@@ -292,7 +292,7 @@ both_nonoriginal <- df_ss %>% semi_join(both, by="screen_name") %>%
     count(screen_name, is_retweet) %>% 
     count(screen_name) %>% 
     nrow()
-both_both <- df_ss %>% semi_join(both_original, by="screen_name") %>%
+both_both <- d %>% semi_join(both_original, by="screen_name") %>%
     semi_join(both, by="screen_name") %>% 
     mutate(screen_name = screen_name %>% tolower) %>%
     count(screen_name, is_retweet) %>% 
@@ -394,10 +394,10 @@ combined_table %>% write_csv("combined-table.csv")
 ## Number of synchronous vs. asynchronous  quote tweets
 
 ```{r}
-df_ss %>% filter(is_quote==TRUE) %>% nrow()  # total number of quote tweets
-sync_quote_n <- df_ss %>% filter(is_quote==TRUE) %>% 
+d %>% filter(is_quote==TRUE) %>% nrow()  # total number of quote tweets
+sync_quote_n <- d %>% filter(is_quote==TRUE) %>% 
     janitor::tabyl(is_sync) %>% filter(is_sync==1) %>% pull(n)
-async_quote_n <- df_ss %>% filter(is_quote==TRUE) %>%
+async_quote_n <- d %>% filter(is_quote==TRUE) %>%
     janitor::tabyl(is_sync) %>% filter(is_sync==0) %>% pull(n)
 sync_quote_n; async_quote_n
 
