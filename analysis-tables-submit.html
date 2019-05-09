@@ -225,18 +225,21 @@ $(document).ready(function () {
 </div>
 <div id="getting-data-from-open-science-framework" class="section level2">
 <h2>Getting data from Open Science Framework</h2>
-<pre class="r"><code>#devtools::install_github(&quot;centerforopenscience/osfr&quot;)   # only need to run once
-library(osfr) 
-# must have generated an API token from an OSF account that has been added to the repository here: https://developer.osf.io/#tag/General-Usage
-# Should see this message:
-# &quot;Automatically registered OSF personal access token&quot;
-
-# First time setup: (http://centerforopenscience.github.io/osfr/articles/auth.html)
-#usethis::edit_r_environ(scope='project')  # to add token to .renviron file
-#  Add 1 line, replacing &lt;token&gt; with your token: 
-#OSF_PAT=&quot;&lt;token&gt;&quot;
-
-osf_retrieve_file(&quot;https://osf.io/ktm2s/?pid=m25zy&quot;) %&gt;% 
+<p>For notes on this one-time setup, see this walkthrough: <a href="http://centerforopenscience.github.io/osfr/articles/auth.html" class="uri">http://centerforopenscience.github.io/osfr/articles/auth.html</a>)</p>
+<p>First, you must generate an API token from an OSF account that has been added to the data repository. Read how to do this here: <a href="https://developer.osf.io/#tag/General-Usage" class="uri">https://developer.osf.io/#tag/General-Usage</a></p>
+<p>Then, you need to add the OSF API token to the <code>.renviron</code> file, which is created using the following command. Here, the file is created at the user level, although this could also be set to the project level.</p>
+<pre class="r"><code>usethis::edit_r_environ(scope='user')</code></pre>
+<p>Open the <code>.renviron</code> file and add a single line, using this exact text but replacing <code>&lt;token&gt;</code> with your OSF API token:<br />
+<code>OSF_PAT=&quot;&lt;token&gt;&quot;</code></p>
+<p>Save the file, quit R, and restart in a new session. Continue running the R script from here.</p>
+<hr />
+<p>Now, install the <code>osfr</code> package and load the library:</p>
+<pre class="r"><code>devtools::install_github(&quot;centerforopenscience/osfr&quot;)   # only need to run once
+library(osfr) </code></pre>
+<p>Upon loading the <code>osfr</code> package, you should see this message:<br />
+<code>Automatically registered OSF personal access token.</code></p>
+<p>Now you are able to retrieve and download the relevant dataset with this code:</p>
+<pre class="r"><code>osf_retrieve_file(&quot;https://osf.io/ktm2s/?pid=m25zy&quot;) %&gt;% 
     osf_download(path = &quot;sync-async-dataset.csv&quot;, overwrite = TRUE)</code></pre>
 </div>
 <div id="loading-the-data" class="section level2">

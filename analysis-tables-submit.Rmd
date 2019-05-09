@@ -32,18 +32,36 @@ library(tidyttest)
 
 ## Getting data from Open Science Framework
 
+For notes on this one-time setup, see this walkthrough: http://centerforopenscience.github.io/osfr/articles/auth.html)
+
+First, you must generate an API token from an OSF account that has been added to the data repository. Read how to do this here: https://developer.osf.io/#tag/General-Usage
+
+Then, you need to add the OSF API token to the `.renviron` file, which is created using the following command. Here, the file is created at the user level, although this could also be set to the project level. 
+
 ```{r, eval = FALSE}
-#devtools::install_github("centerforopenscience/osfr")   # only need to run once
+usethis::edit_r_environ(scope='user')
+```
+
+Open the `.renviron` file and add a single line, using this exact text but replacing `<token>` with your OSF API token:  
+`OSF_PAT="<token>"`
+
+Save the file, quit R, and restart in a new session. Continue running the R script from here.
+
+--------------------------------------------------------------------------------
+
+Now, install the `osfr` package and load the library:
+
+```{r, eval = FALSE}
+devtools::install_github("centerforopenscience/osfr")   # only need to run once
 library(osfr) 
-# must have generated an API token from an OSF account that has been added to the repository here: https://developer.osf.io/#tag/General-Usage
-# Should see this message:
-# "Automatically registered OSF personal access token"
+```
 
-# First time setup: (http://centerforopenscience.github.io/osfr/articles/auth.html)
-#usethis::edit_r_environ(scope='project')  # to add token to .renviron file
-#  Add 1 line, replacing <token> with your token: 
-#OSF_PAT="<token>"
+Upon loading the `osfr` package, you should see this message:  
+`Automatically registered OSF personal access token.` 
 
+Now you are able to retrieve and download the relevant dataset with this code:
+
+```{r, eval = FALSE}
 osf_retrieve_file("https://osf.io/ktm2s/?pid=m25zy") %>% 
     osf_download(path = "sync-async-dataset.csv", overwrite = TRUE)
 ```
