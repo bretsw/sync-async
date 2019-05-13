@@ -118,8 +118,8 @@ df_ss %>% count(is_retweet, is_quote, is_reply, is_orig, type)
 ```{r}
 df_ss %>% nrow()  # total number of tweets
 #df_ss %>% janitor::tabyl(is_sync)
-sync_n <- df_ss %>% janitor::tabyl(is_sync) %>% filter(is_sync==1) %>% pull(n)
-async_n <- df_ss %>% janitor::tabyl(is_sync) %>% filter(is_sync==0) %>% pull(n)
+sync_n <- df_ss %>% tabyl(is_sync) %>% filter(is_sync==1) %>% pull(n)
+async_n <- df_ss %>% tabyl(is_sync) %>% filter(is_sync==0) %>% pull(n)
 sync_n; async_n
 #(sync_n + async_n) - (df_ss %>% nrow())  # make sure all rows are accounted for
 
@@ -132,25 +132,29 @@ chisq.test(c(sync_n, async_n))
 ```{r}
 ## Number of distinct tweeters
 
-df_ss %>% pull(screen_name) %>% tolower() %>% unique() %>% length()
-
-tweeters_df <- df_ss %>% 
+tweeters_df <- df_ss %>%
     mutate(screen_name = screen_name %>% tolower) %>%
-    group_by(is_sync) %>% 
+    group_by(is_sync) %>%
     summarize(unique_tweeters = (screen_name %>% unique %>% length))
+
 sync_tweeters_n <- tweeters_df %>% filter(is_sync==1) %>% pull(unique_tweeters)
 async_tweeters_n <- tweeters_df %>% filter(is_sync==0) %>% pull(unique_tweeters)
 sync_tweeters_n; async_tweeters_n
 
+# the code above is similar to:
+
+df_ss %>% count(is_sync, screen_name)
+
 both <- df_ss %>% count(screen_name, is_sync) %>% 
     count(screen_name) %>% filter(n == 2)
+
 both_n <- both %>% nrow()
 
 only_one <- df_ss %>% count(screen_name, is_sync) %>% 
     count(screen_name) %>% filter(n == 1)
 
 sync_only_n <- df_ss %>% semi_join(only_one, by="screen_name") %>%
-    mutate(screen_name = screen_name %>% tolower) %>%
+    mutate(screen_name = screen_name %>% tolower)
     filter(is_sync==1) %>%
     count(screen_name, is_sync) %>% 
     count(screen_name) %>% filter(n == 1) %>% 
@@ -165,11 +169,15 @@ async_only_n <- df_ss %>% semi_join(only_one, by="screen_name") %>%
 
 paste("Both:", both_n); paste("Sync Only:", sync_only_n); paste("Async Only:", async_only_n)
 
-only_one_original <- df_ss %>% count(screen_name, is_retweet) %>% 
-    count(screen_name) %>% filter(n == 1)
+only_one_original <- df_ss %>% 
+    count(screen_name, is_retweet) %>% 
+    count(screen_name) %>% 
+    filter(n == 1)
 
-both_original <- df_ss %>% count(screen_name, is_retweet) %>% 
-    count(screen_name) %>% filter(n == 2)
+both_original <- df_ss %>% 
+    count(screen_name, is_retweet) %>% 
+    count(screen_name) %>% 
+    filter(n == 2)
 
 both_original_n <- both_original %>% nrow()
 
