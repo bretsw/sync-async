@@ -8,6 +8,14 @@ output:
         float_toc: true
 ---
 
+# R version and package info
+
+Note that this is the version of R and of packages used to render this document.
+
+```{r}
+sessionInfo()
+```
+
 # Loading the data and setting up
 
 This section loads the data and packages and starts to process the data, but doesn't calculate any statistics or create any results.
@@ -117,6 +125,17 @@ names(d)[92:ncol(d)] <- c("WC", "Analytic", "Clout", "Authentic", "Tone", "WPS",
 
 ## Processing the data
 
+Fixing hashtags and URLs using regex.
+
+```{r}
+hashtag_pattern <- "#([0-9]|[a-zA-Z])+"
+link_pattern <- "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+
+d <- mutate(d, 
+            hashtags_count = str_count(text, hashtag_pattern),
+            urls_count = str_count(text, link_pattern))
+```
+
 ```{r}
 reply_tweets <- d %>% 
     mutate(is_reply = !is.na(reply_to_status_id)) %>% 
@@ -131,8 +150,8 @@ length_with_na <- function(x) {
 proc_tweets <- function(d) {
   d %>%
     mutate(mentions_count = length_with_na(str_split(mentions_screen_name, " ")),
-           hashtags_count = length_with_na(str_split(hashtags, " ")),
-           urls_count = length_with_na(str_split(urls_url, " ")),
+           #hashtags_count = length_with_na(str_split(hashtags, " ")),
+           #urls_count = length_with_na(str_split(urls_url, " ")),
            is_reply = if_else(!is.na(reply_to_status_id), TRUE, FALSE))
 }
 

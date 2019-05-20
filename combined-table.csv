@@ -1,0 +1,12 @@
+group,var,Asynchronous,Synchronous,t,d
+content,Cognitive Processing,5.597 (0.034),10.375 (0.075),58.23 p < .001,0.72
+content,Positive affect,3.159 (0.025),5.611 (0.056),40.125 p < .001,0.49
+content,Social,5.879 (0.034),8.787 (0.069),37.774 p < .001,0.46
+content,Work-related Concerns,6.63 (0.033),6 (0.057),9.502 p < .001,0.12
+content,Negative affect,0.82 (0.013),0.894 (0.023),2.828 p = (0.005),0.03
+interactions,Replies,0.047 (0.001),0.239 (0.005),40.675 p < .001,0.5
+interactions,Retweets,1.042 (0.013),0.432 (0.009),38.387 p < .001,0.47
+interactions,Mentions,0.74 (0.006),0.47 (0.007),31.368 p < .001,0.39
+interactions,Likes,1.303 (0.014),1.623 (0.017),14.625 p < .001,0.18
+portals,URLs,0.806 (0.003),0.18 (0.003),140.463 p < .001,1.73
+portals,Hashtags,2.164 (0.007),1.186 (0.005),117.713 p < .001,1.45
