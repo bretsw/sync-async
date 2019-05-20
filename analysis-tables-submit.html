@@ -243,6 +243,13 @@ library(osfr) </code></pre>
 </div>
 <div id="processing-the-data" class="section level2">
 <h2>Processing the data</h2>
+<p>Fixing hashtags and URLs using regex.</p>
+<pre class="r"><code>hashtag_pattern &lt;- &quot;#([0-9]|[a-zA-Z])+&quot;
+link_pattern &lt;- &quot;http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&amp;+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+&quot;
+
+d &lt;- mutate(d, 
+            hashtags_count = str_count(text, hashtag_pattern),
+            urls_count = str_count(text, link_pattern))</code></pre>
 <pre class="r"><code>reply_tweets &lt;- d %&gt;% 
     mutate(is_reply = !is.na(reply_to_status_id)) %&gt;% 
     filter(is_reply) %&gt;% 
@@ -256,8 +263,8 @@ length_with_na &lt;- function(x) {
 proc_tweets &lt;- function(d) {
   d %&gt;%
     mutate(mentions_count = length_with_na(str_split(mentions_screen_name, &quot; &quot;)),
-           hashtags_count = length_with_na(str_split(hashtags, &quot; &quot;)),
-           urls_count = length_with_na(str_split(urls_url, &quot; &quot;)),
+           #hashtags_count = length_with_na(str_split(hashtags, &quot; &quot;)),
+           #urls_count = length_with_na(str_split(urls_url, &quot; &quot;)),
            is_reply = if_else(!is.na(reply_to_status_id), TRUE, FALSE))
 }
 
@@ -512,7 +519,7 @@ fit2</code></pre>
 prepped_data3 &lt;- select(prepped_data, is_sync, Hashtags, URLs)
 fit3 = hotelling.test(. ~ is_sync, data = prepped_data3)
 fit3</code></pre>
-<pre><code>## Test stat:  9748.5 
+<pre><code>## Test stat:  11235 
 ## Numerator df:  2 
 ## Denominator df:  46723 
 ## P-value:  0</code></pre>
@@ -590,8 +597,8 @@ combined_table</code></pre>
 ##  7 interacti… Retweets        1.042 (0.013) 0.432 (0.00… 38.387 p &lt; …  0.47
 ##  8 interacti… Mentions        0.74 (0.006)  0.47 (0.007) 31.368 p &lt; …  0.39
 ##  9 interacti… Likes           1.303 (0.014) 1.623 (0.01… 14.625 p &lt; …  0.18
-## 10 portals    URLs            0.654 (0.003) 0.145 (0.00… 122.761 p &lt;…  1.51
-## 11 portals    Hashtags        2.16 (0.007)  1.183 (0.00… 117.949 p &lt;…  1.45</code></pre>
+## 10 portals    URLs            0.806 (0.003) 0.18 (0.003) 140.463 p &lt;…  1.73
+## 11 portals    Hashtags        2.164 (0.007) 1.186 (0.00… 117.713 p &lt;…  1.45</code></pre>
 <pre class="r"><code>combined_table %&gt;% write_csv(&quot;combined-table.csv&quot;)</code></pre>
 </div>
 <div id="number-of-synchronous-vs.asynchronous-quote-tweets" class="section level2">
