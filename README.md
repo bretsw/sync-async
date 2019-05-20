@@ -9,5 +9,5 @@
   - no data is shared; you need to add the file `snyc_async_tweets_full_metadata.rds` manually to this repository
   - the data is "ignored" by the `.gitignore` file; you can double-check that yours ignores these files, too, in the case that you push changes, but it should copy over when you clone/download the repository
 
-- the full background code is in `analysis_background_data_processing.Rmd`
+- the full background code is in `analysis_background_data_processing.R`
 - analysis.R is the old script - it is not used for the manuscript 

@@ -1,18 +1,8 @@
----
-title: "Sync-Async Analysis"
-author: "Joshua M. Rosenberg & K. Bret Staudt Willet"
-date: "2/23/2019"
-output: html_document
----
-
-```{r setup, include=FALSE}
+## ----setup, include=FALSE------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 usethis::use_git_ignore(c("*.csv", "*.rds"))
-```
 
-# Loading, setting up
-
-```{r, include=FALSE}
+## ---- include=FALSE------------------------------------------------------
 library(tidyverse)
 library(rtweet)
 library(lubridate)
@@ -96,13 +86,8 @@ df_ss <- df_sync_async_full %>%
 #df_ss <- readRDS("snyc_async_tweets_full_metadata.rds")
 df_ss %>% dim
 
-```
 
-# RQ1: Activity
-
-## Activity statistics and tests
-
-```{r}
+## ------------------------------------------------------------------------
 # number of sync vs. async tweets
 df_ss %>% nrow  # total number of tweets
 sync_n <- df_ss %>% pull(is_sync) %>% sum
@@ -138,11 +123,8 @@ df_ss %>%
     filter(type == "ORIG") %>% 
     rename(number_of_orig_tweets = n) %>%  
     t_test(number_of_orig_tweets, is_sync)
-```
 
-## Activity Plot: Sync vs. Async
-
-```{r}
+## ------------------------------------------------------------------------
 df_ss$date_r <- df_ss$date %>% floor_date("day")
 
 to_plot <- df_ss %>% count(date_r, is_sync) %>% as.data.frame %>%
@@ -171,13 +153,8 @@ ggplot(to_plot, aes(x = date_r, y = n,
     theme(legend.position = "bottom")
 
 # ggsave("async-sync-time-series.png", width = 7, height = 5)
-```
 
-# RQ2: Content
-
-## Content Plot: Sync vs. Async
-
-```{r}
+## ------------------------------------------------------------------------
 liwc <- read_csv("snyc_async_tweets_liwc.csv")
 liwc <- rename(liwc, tweet_link = `Source (A)`)
 liwc_df <- liwc %>% left_join(df_ss)
@@ -222,11 +199,8 @@ liwc_df %>%
 
 #ggsave("content.png", width = 6.75, height = 7.75)
 
-```
 
-## Content descriptives and stats
-
-```{r}
+## ------------------------------------------------------------------------
 # affect
 mean(liwc_df$affect)
 
@@ -296,15 +270,8 @@ mean(liwc_df$informal)
 liwc_df %>%
     filter(type == "ORIG") %>% 
     t_test(informal, is_sync)
-```
 
-# RQ3: Interactions
-
-## Interactions Plot: Retweets, Likes, Mentions, Replies
-
-### Plot we use
-
-```{r}
+## ------------------------------------------------------------------------
 
 df_ss %>% 
     select(is_sync, 
@@ -336,34 +303,28 @@ df_ss %>%
     ylab("Mean Per Tweet")
 
 # ggsave("interactions.png", width = 5.5, height = 6)
-```
 
-### Not sure if we use this one so this code isn't run right now
+## ---- eval = FALSE-------------------------------------------------------
+## #df_orig <- df_ss %>% filter(type == "ORIG")
+## 
+## #df_orig %>%
+##     group_by(is_sync, type) %>%
+##     select(is_sync,
+##            favorites = scraped_num_favorites,
+##            retweets = retweet_count,
+##            replies = scraped_num_replies,
+##            mentions = num_non_reply_mentions,
+##            hashtag = num_hashtags) %>%
+##         group_by(is_sync) %>%
+##         summarize_all(mean) %>%
+##         gather(key, val, -is_sync) %>%
+##         mutate(is_sync = as.factor(is_sync)) %>%
+##         ggplot(aes(x = reorder(key, val), y = val, fill = is_sync)) +
+##         geom_col(position = "dodge") +
+##         coord_flip() +
+##         hrbrthemes::theme_ipsum()
 
-```{r, eval = FALSE}
-#df_orig <- df_ss %>% filter(type == "ORIG")
-
-#df_orig %>%
-    group_by(is_sync, type) %>% 
-    select(is_sync, 
-           favorites = scraped_num_favorites, 
-           retweets = retweet_count, 
-           replies = scraped_num_replies, 
-           mentions = num_non_reply_mentions, 
-           hashtag = num_hashtags) %>% 
-        group_by(is_sync) %>% 
-        summarize_all(mean) %>% 
-        gather(key, val, -is_sync) %>% 
-        mutate(is_sync = as.factor(is_sync)) %>% 
-        ggplot(aes(x = reorder(key, val), y = val, fill = is_sync)) +
-        geom_col(position = "dodge") + 
-        coord_flip() +
-        hrbrthemes::theme_ipsum()
-```
-
-## Interactions descriptives and statistical tests
-
-```{r}
+## ------------------------------------------------------------------------
 
 # t-test for favs
 df_ss %>% 
@@ -406,13 +367,8 @@ df_ss %>%
 df_ss %>% 
     filter(type == "ORIG") %>% 
     t_test(num_urls, is_sync)
-```
 
-# RQ4: Portals
-
-## Portals plot
-
-```{r}
+## ------------------------------------------------------------------------
 
 df_ss %>% 
     select(is_sync, 
@@ -440,11 +396,8 @@ df_ss %>%
     ylab("Mean Per Tweet")
 
 # ggsave("portals.png", width = 5, height = 4.35)
-```
 
-## Portals descriptive stats and statistical tests
-
-```{r}
+## ------------------------------------------------------------------------
 df_ss %>% 
     filter(type == "ORIG") %>% 
     summarize(mean_urls_hashtags = mean(num_urls))
@@ -452,4 +405,4 @@ df_ss %>%
 df_ss %>% 
     filter(type == "ORIG") %>% 
     t_test(num_urls, is_sync)
-```
+
