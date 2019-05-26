@@ -192,7 +192,6 @@ $(document).ready(function () {
 
 <div id="TOC">
 <ul>
-<li><a href="#r-version-and-package-info">R version and package info</a></li>
 <li><a href="#loading-the-data-and-setting-up">Loading the data and setting up</a><ul>
 <li><a href="#loading-packages">Loading packages</a></li>
 <li><a href="#getting-data-from-open-science-framework">Getting data from Open Science Framework</a></li>
@@ -210,33 +209,10 @@ $(document).ready(function () {
 <li><a href="#joining-tables">Joining Tables</a></li>
 <li><a href="#number-of-synchronous-vs.asynchronous-quote-tweets">Number of synchronous vs. asynchronous quote tweets</a></li>
 </ul></li>
+<li><a href="#r-version-and-package-info">R version and package info</a></li>
 </ul>
 </div>
 
-<div id="r-version-and-package-info" class="section level1">
-<h1>R version and package info</h1>
-<p>Note that this is the version of R and of packages used to render this document.</p>
-<pre class="r"><code>sessionInfo()</code></pre>
-<pre><code>## R version 3.5.3 (2019-03-11)
-## Platform: x86_64-apple-darwin15.6.0 (64-bit)
-## Running under: macOS Mojave 10.14.2
-## 
-## Matrix products: default
-## BLAS: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRblas.0.dylib
-## LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib
-## 
-## locale:
-## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
-## 
-## attached base packages:
-## [1] stats     graphics  grDevices utils     datasets  methods   base     
-## 
-## loaded via a namespace (and not attached):
-##  [1] compiler_3.5.3  magrittr_1.5    tools_3.5.3     htmltools_0.3.6
-##  [5] yaml_2.2.0      Rcpp_1.0.1      stringi_1.4.3   rmarkdown_1.11 
-##  [9] knitr_1.21      stringr_1.4.0   xfun_0.4        digest_0.6.18  
-## [13] evaluate_0.13</code></pre>
-</div>
 <div id="loading-the-data-and-setting-up" class="section level1">
 <h1>Loading the data and setting up</h1>
 <p>This section loads the data and packages and starts to process the data, but doesn’t calculate any statistics or create any results.</p>
@@ -645,6 +621,50 @@ chisq.test(c(sync_quote_n, async_quote_n))</code></pre>
 ## data:  c(sync_quote_n, async_quote_n)
 ## X-squared = 1070, df = 1, p-value &lt; 2.2e-16</code></pre>
 </div>
+</div>
+<div id="r-version-and-package-info" class="section level1">
+<h1>R version and package info</h1>
+<p>Note that this is the version of R and of packages used to render this document.</p>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 3.5.3 (2019-03-11)
+## Platform: x86_64-apple-darwin15.6.0 (64-bit)
+## Running under: macOS Mojave 10.14.2
+## 
+## Matrix products: default
+## BLAS: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRblas.0.dylib
+## LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] tidyttest_0.1.0 Hotelling_1.0-5 corpcor_1.6.9   janitor_1.1.1  
+##  [5] lubridate_1.7.4 rtweet_0.6.8    forcats_0.3.0   stringr_1.4.0  
+##  [9] dplyr_0.8.0.1   purrr_0.3.2     readr_1.3.1     tidyr_0.8.3    
+## [13] tibble_2.1.1    ggplot2_3.1.1   tidyverse_1.2.1
+## 
+## loaded via a namespace (and not attached):
+##  [1] clisymbols_1.2.0   tidyselect_0.2.5   xfun_0.4          
+##  [4] compute.es_0.2-4   haven_2.0.0        lattice_0.20-38   
+##  [7] colorspace_1.4-1   generics_0.0.2     usethis_1.4.0     
+## [10] htmltools_0.3.6    yaml_2.2.0         utf8_1.1.4        
+## [13] rlang_0.3.4        pillar_1.3.1       glue_1.3.1        
+## [16] withr_2.1.2        RColorBrewer_1.1-2 modelr_0.1.2      
+## [19] readxl_1.2.0       plyr_1.8.4         munsell_0.5.0     
+## [22] gtable_0.3.0       cellranger_1.1.0   rvest_0.3.2       
+## [25] evaluate_0.13      labeling_0.3       knitr_1.21        
+## [28] fansi_0.4.0        broom_0.5.2        Rcpp_1.0.1        
+## [31] scales_1.0.0       backports_1.1.4    jsonlite_1.6      
+## [34] fs_1.2.7           hms_0.4.2          digest_0.6.18     
+## [37] stringi_1.4.3      grid_3.5.3         rprojroot_1.3-2   
+## [40] cli_1.1.0          tools_3.5.3        magrittr_1.5      
+## [43] lazyeval_0.2.2     crayon_1.3.4       pkgconfig_2.0.2   
+## [46] xml2_1.2.0         assertthat_0.2.1   rmarkdown_1.11    
+## [49] httr_1.4.0         rstudioapi_0.9.0   R6_2.4.0          
+## [52] nlme_3.1-137       compiler_3.5.3</code></pre>
 </div>
 
 
