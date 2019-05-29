@@ -442,3 +442,11 @@ sync_quote_n; async_quote_n
 ## test if difference is significant
 chisq.test(c(sync_quote_n, async_quote_n))
 ```
+
+# R version and package info
+
+Note that this is the version of R and of packages used to render this document.
+
+```{r}
+sessionInfo()
+```
