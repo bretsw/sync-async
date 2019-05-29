@@ -1,7 +1,7 @@
 ---
 title: "Sync-Async Analysis"
-author: " Spencer P. Greenhalgh, Joshua M. Rosenberg, & K. Bret Staudt Willet"
-date: "5/7/2019"
+author: "Spencer P. Greenhalgh, Joshua M. Rosenberg, & K. Bret Staudt Willet"
+date: "5/20/2019"
 output: 
     html_document:
         toc: true
@@ -162,8 +162,8 @@ prepped_data <- d %>%
            mentions_count, hashtags_count, urls_count) %>% 
     rename(Social = social,
            `Cognitive Processing` = cogproc,
-           `Positive affect` = posemo,
-           `Negative affect` = negemo,
+           `Positive Affect` = posemo,
+           `Negative Affect` = negemo,
            `Work-related Concerns` = work) %>% 
     rename(Likes = favorite_count,
            Retweets = retweet_count,
