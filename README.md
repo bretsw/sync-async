@@ -1,13 +1,14 @@
-# sync-async-manuscript
+# Sync-Async Manuscript
 
-- this should work best if you clone / download the repository and then open the R project (will make it easier to find the correct file paths)
-- `analysis-tables-submit.Rmd` is the main file to run
-  - it contains sections associated with each of the research questions
-  - right now, it renders to HTML, but we can render it to a PDF or Word Doc if we like
-- there is one tricky dependency - it's a package for tidy *t*-tests Josh made for this
-  - you have to first install the **devtools** package and then use devtools to download **tidyttest** from GitHub (it's not available on CRAN)
-  - no data is shared; you need to add the file `snyc_async_tweets_full_metadata.rds` manually to this repository
-  - the data is "ignored" by the `.gitignore` file; you can double-check that yours ignores these files, too, in the case that you push changes, but it should copy over when you clone/download the repository
+Note that the dataset has been preprocessed using the R package **rtweet** to collect full Twitter API-supported metadata for tweets initially collected using **TAGS**. The content of these tweets has also been analyzed with the proprietary (i.e., not open) LIWC software. 
 
-- the full background code is in `analysis_background_data_processing.R`
-- analysis.R is the old script - it is not used for the manuscript 
+- `analysis.Rmd` is the main file to run
+  - This file contains sections associated with each of the research questions.
+  - Currently, this file renders to HTML, but you can render it to a PDF or Word Doc if you prefer.
+- Note that there are two tricky dependencies:
+  - You will first need to install the **devtools** package
+  - Next, use devtools to download the **tidyttest** package from GitHub (it's not available on CRAN). This is a package for tidy *t*-tests.
+  - Finally, use devtools to dowload the **OSFR** package from GitHub. This is a package to import the dataset from OSF.io.
+- No data is shared on GitHub; you will need to add the file `sync-async-dataset.csv` manually to this repository OR follow the instructions to import the file from OSF.io.
+  - The data is "ignored" by the `.gitignore` file; you can double-check that yours ignores these files, too, in the case that you push changes, but it should copy over when you clone/download the repository.
+- Open `analysis.html` to view the completed analysis.
