@@ -1,7 +1,7 @@
 ---
 title: "Sync-Async Analysis"
-author: " Spencer P. Greenhalgh, Joshua M. Rosenberg, & K. Bret Staudt Willet"
-date: "5/7/2019"
+author: "Removed for Peer Review"
+date: "5/29/2019"
 output: 
     html_document:
         toc: true
@@ -25,7 +25,7 @@ library(rtweet)
 library(lubridate)
 library(janitor)
 library(Hotelling)
-#library(devtools)  # need to install if not installed
+library(devtools)
 #devtools::install_github("jrosen48/tidyttest")  # only need to run once
 library(tidyttest)
 ```
@@ -62,7 +62,7 @@ Upon loading the `osfr` package, you should see this message:
 Now you are able to retrieve and download the relevant dataset with this code:
 
 ```{r, eval = FALSE}
-osf_retrieve_file("https://osf.io/ktm2s/?pid=m25zy") %>% 
+osf_retrieve_file("https://osf.io/k8c7f/") %>% 
     osf_download(path = "sync-async-dataset.csv", overwrite = TRUE)
 ```
 
@@ -162,8 +162,8 @@ prepped_data <- d %>%
            mentions_count, hashtags_count, urls_count) %>% 
     rename(Social = social,
            `Cognitive Processing` = cogproc,
-           `Positive affect` = posemo,
-           `Negative affect` = negemo,
+           `Positive Affect` = posemo,
+           `Negative Affect` = negemo,
            `Work-related Concerns` = work) %>% 
     rename(Likes = favorite_count,
            Retweets = retweet_count,
@@ -217,7 +217,7 @@ p <- ggplot(to_plot) +
 
 p
 
-ggsave("async-sync-time-series.png", width = 7, height = 5)
+ggsave("sync-async-time-series.png", width = 7, height = 5)
 ```
 
 ## Number of synchronous vs. asynchronous tweets
@@ -426,7 +426,7 @@ combined_table <- mean_stats %>%
     arrange(group, desc(d))
 combined_table
 
-combined_table %>% write_csv("combined-table.csv")
+combined_table %>% write_csv("combined-table-for-publication.csv")
 ```
 
 ## Number of synchronous vs. asynchronous  quote tweets
@@ -441,4 +441,12 @@ sync_quote_n; async_quote_n
 
 ## test if difference is significant
 chisq.test(c(sync_quote_n, async_quote_n))
+```
+
+# R version and package info
+
+Note that this is the version of R and of packages used to render this document.
+
+```{r}
+sessionInfo()
 ```
