@@ -1,6 +1,6 @@
 # Sync-Async Manuscript
 
-Note that the dataset has been preprocessed using the R package **rtweet** to collect full Twitter API-supported metadata for tweets initially collected using **TAGS**. The content of these tweets has also been analyzed with the proprietary (i.e., not open) LIWC software. 
+Note that the dataset has been preprocessed using the R package **rtweet** to collect full Twitter API-supported metadata for tweets initially collected using **TAGS**. The content of these tweets has been analyzed with the proprietary (i.e., not open) LIWC software.
 
 - `analysis.Rmd` is the main file to run
   - This file contains sections associated with each of the research questions.
