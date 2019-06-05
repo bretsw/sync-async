@@ -46,21 +46,26 @@ mentionsList <- str_extract_all(df$mentions_screen_name[!is.na(df$mentions_scree
                 unique()
 
 name_list <- unique(c(df$screen_name, mentionsList))
+
 anonymous_name_list <- paste0("username_",1:length(name_list))
 
 # length(name_list)
 # length(anonymous_name_list)
 
 for(i in 1:length(name_list)){
-    df$screen_name <- str_replace(df$screen_name, paste0("\\b",name_list[i],"\\b"), anonymous_name_list[i])
-    df$mentions_screen_name <- str_replace(df$mentions_screen_name, paste0("\\b",name_list[i],"\\b"), anonymous_name_list[i])
+    df$screen_name <- str_replace(df$screen_name, paste0("(^| )",name_list[i],"($| )"), paste0(" ",anonymous_name_list[i]," "))
+    df$mentions_screen_name <- str_replace(df$mentions_screen_name, paste0("(^| )",name_list[i],"($| )"), paste0(" ",anonymous_name_list[i]," "))
     print(i)
 }
+
+df$screen_name <- str_trim(df$screen_name, side = "both")
+df$mentions_screen_name <- str_trim(df$mentions_screen_name, side = "both")
 
 beepr::beep(8)
 
 View(df)
-View(df_old)
+
+# write_csv(df, "backup_df.csv")
 
 ## -----------------------------------------
 ## anonymize status_ids
@@ -76,16 +81,14 @@ for(i in 1:length(status_list)){
     print(i)
 }
 
-write_csv(df, "backup_df.csv")
+write_csv(df, "backup_df_full.csv")
 
 ## -----------------------------------------
 ## delete identifiable information
 ## -----------------------------------------
 
-df_anonymous <- df[,c(2:3,8,11:19,29, 90:186)]
+# df <- read_csv("backup_df.csv")
 
-colnames(df)
-
-View(df_anonymous)
+df_anonymous <- df[,c(2:4,8,11:19,29, 90:186)]
 
 write_csv(df_anonymous, "anonymized-dataset.csv")
