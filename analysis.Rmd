@@ -62,7 +62,7 @@ Upon loading the `osfr` package, you should see this message:
 Now you are able to retrieve and download the relevant dataset with this code:
 
 ```{r, eval = FALSE}
-osf_retrieve_file("https://osf.io/k8c7f/") %>% 
+osf_retrieve_file("https://osf.io/pxmfc/") %>% 
     osf_download(path = "anonymized-dataset.csv", overwrite = TRUE)
 ```
 
