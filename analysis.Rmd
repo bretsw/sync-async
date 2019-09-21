@@ -53,7 +53,7 @@ Now, install the `osfr` package and load the library:
 
 ```{r, eval = FALSE}
 devtools::install_github("centerforopenscience/osfr")   # only need to run once
-library(osfr) 
+library(osfr)
 ```
 
 Upon loading the `osfr` package, you should see this message:  
@@ -73,8 +73,6 @@ Note that we first processed data collected via TAGS (tags.hawksey.info) in orde
 ```{r, include=FALSE}
 d <- read_csv("anonymized-dataset.csv")
 ```
-
-
 
 ## Processing the data
 
@@ -106,7 +104,7 @@ prepped_data <- d %>%
     mutate(reply_to_status_id = status_id) %>% 
     left_join(reply_tweets, by = "reply_to_status_id") %>% 
     mutate(replies_count = ifelse(is.na(replies_count), 0, replies_count)) %>% 
-    select(is_sync,
+    select(screen_name, is_sync,
            social, cogproc, posemo, negemo, work,
            favorite_count, retweet_count, replies_count, 
            mentions_count, hashtags_count, urls_count) %>% 
@@ -294,31 +292,34 @@ chisq.test(rbind(c(sync_only_original, async_only_original, both_original_),
 
 # RQs 2-4: Content, Interactions, Portals
 
-## Hotelling's test
+Note - the below is commented out as in the review process we decided to cut the multivariate tests (due to other changes we made).
 
-Prior to answering the second through fourth research questions, we examined whether there were multivariate differences in the three groups of outcomes (i.e., content, interaction, and portals) using a Hotelling's T-squared test.
+<!-- ## Hotelling's test -->
 
-```{r}
-# content
-prepped_data1 <- select(prepped_data, is_sync:`Work-related Concerns`)
-fit1 = hotelling.test(. ~ is_sync, data = prepped_data1)
-fit1
+<!-- Prior to answering the second through fourth research questions, we examined whether there were multivariate differences in the three groups of outcomes (i.e., content, interaction, and portals) using a Hotelling's T-squared test. -->
 
-# interactions
-prepped_data2 <- select(prepped_data, is_sync, Likes:Mentions)
-fit2 = hotelling.test(. ~ is_sync, data = prepped_data2)
-fit2
+<!-- ```{r, eval = FALSE} -->
+<!-- # content -->
+<!-- prepped_data1 <- select(prepped_data, is_sync:`Work-related Concerns`) -->
+<!-- fit1 = hotelling.test(. ~ is_sync, data = prepped_data1) -->
+<!-- fit1 -->
 
-# portals
-prepped_data3 <- select(prepped_data, is_sync, Hashtags, URLs)
-fit3 = hotelling.test(. ~ is_sync, data = prepped_data3)
-fit3
-```
+<!-- # interactions -->
+<!-- prepped_data2 <- select(prepped_data, is_sync, Likes:Mentions) -->
+<!-- fit2 = hotelling.test(. ~ is_sync, data = prepped_data2) -->
+<!-- fit2 -->
+
+<!-- # portals -->
+<!-- prepped_data3 <- select(prepped_data, is_sync, Hashtags, URLs) -->
+<!-- fit3 = hotelling.test(. ~ is_sync, data = prepped_data3) -->
+<!-- fit3 -->
+<!-- ``` -->
 
 This creates a table for the subsequent analyses.
 
 ```{r}
 mean_stats <- prepped_data %>% 
+    select(-screen_name) %>% 
     group_by(is_sync) %>% 
     summarize_all(funs(mean, sd, n())) %>% 
     gather(key, val, -is_sync) %>% 
