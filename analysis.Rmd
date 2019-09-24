@@ -443,7 +443,7 @@ sync_quote_n; async_quote_n
 chisq.test(c(sync_quote_n, async_quote_n))
 ```
 
-## Number of synchronous vs. asynchronous  quote tweets
+## creates categorical variables for sync/async; original/retweet
 
 ```{r}
 
