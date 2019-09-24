@@ -443,6 +443,40 @@ sync_quote_n; async_quote_n
 chisq.test(c(sync_quote_n, async_quote_n))
 ```
 
+## Number of synchronous vs. asynchronous  quote tweets
+
+```{r}
+
+# Variable 1, a categorical with: only sync, only async, both async and sync
+
+sync_names <- d %>% filter(is_sync == TRUE) %>% pull(screen_name) %>% unique()
+async_names <- d %>% filter(is_sync == FALSE) %>% pull(screen_name) %>% unique()
+
+both_names <- sync_names[sync_names %in% async_names]
+
+only_sync <- sync_names[!sync_names %in% both_names]
+only_async <- async_names[!async_names %in% both_names]
+
+d <- d %>% mutate(sync_categorical = ifelse(screen_name %in% both_names, "both", ifelse(screen_name %in% only_sync, "sync", "async")))
+
+# Variable 2, a categorical with: only original, only retweeting, and original and retweeting
+
+original_names <- d %>% filter(is_retweet == FALSE) %>% pull(screen_name) %>% unique()
+retweet_names <- d %>% filter(is_retweet == TRUE) %>% pull(screen_name) %>% unique()
+
+both_o_names <- original_names[original_names %in% retweet_names]
+
+only_retweet <- retweet_names[!retweet_names %in% both_o_names]
+only_original <- original_names[!original_names %in% both_o_names]
+
+both_o_names %>% length()
+
+d <- d %>% mutate(original_categorical = ifelse(screen_name %in% both_o_names, "both", ifelse(screen_name %in% only_original, "original", "retweet")))
+
+d %>% filter(original_categorical == "retweet") %>% pull(screen_name)%>% unique() %>% length()
+
+```
+
 # R version and package info
 
 Note that this is the version of R and of packages used to render this document.
