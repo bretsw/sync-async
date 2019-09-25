@@ -1,7 +1,7 @@
 ---
 title: "Sync-Async Analysis"
-author: "Joshua M. Rosenberg, K. Bret Staudt Willet, & Spencer P. Greenhalgh"
-date: "5/7/2019"
+author: "Removed for Peer Review"
+date: "6/7/2019"
 output: 
     html_document:
         toc: true
@@ -25,76 +25,53 @@ library(rtweet)
 library(lubridate)
 library(janitor)
 library(Hotelling)
-#library(devtools)  # need to install if not installed
-#devtools::install_github("jrosen48/tidyttest")  # only need to run once
+library(devtools)
+# devtools::install_github("jrosen48/tidyttest")  # only need to run once
 library(tidyttest)
 ```
 
 ## Getting data from Open Science Framework
 
+For notes on this one-time setup, see this walkthrough: http://centerforopenscience.github.io/osfr/articles/auth.html)
+
+First, you must generate an API token from an OSF account that has been added to the data repository. Read how to do this here: https://developer.osf.io/#tag/General-Usage
+
+Then, you need to add the OSF API token to the `.renviron` file, which is created using the following command. Here, the file is created at the user level, although this could also be set to the project level. 
+
 ```{r, eval = FALSE}
-#devtools::install_github("centerforopenscience/osfr")   # only need to run once
-library(osfr) 
-# must have generated an API token from an OSF account that has been added to the repository here: https://developer.osf.io/#tag/General-Usage
-# Should see this message:
-# "Automatically registered OSF personal access token"
+usethis::edit_r_environ(scope='user')
+```
 
-# First time setup: (http://centerforopenscience.github.io/osfr/articles/auth.html)
-#usethis::edit_r_environ(scope='project')  # to add token to .renviron file
-#  Add 1 line, replacing <token> with your token: 
-#OSF_PAT="<token>"
+Open the `.renviron` file and add a single line, using this exact text but replacing `<token>` with your OSF API token:  
+`OSF_PAT="<token>"`
 
-osf_retrieve_file("https://osf.io/ktm2s/?pid=m25zy") %>% 
-    osf_download(path = "sync-async-dataset.csv", overwrite = TRUE)
+Save the file, quit R, and restart in a new session. Continue running the R script from here.
+
+--------------------------------------------------------------------------------
+
+Now, install the `osfr` package and load the library:
+
+```{r, eval = FALSE}
+devtools::install_github("centerforopenscience/osfr")   # only need to run once
+library(osfr)
+```
+
+Upon loading the `osfr` package, you should see this message:  
+`Automatically registered OSF personal access token.` 
+
+Now you are able to retrieve and download the relevant dataset with this code:
+
+```{r, eval = FALSE}
+osf_retrieve_file("https://osf.io/pxmfc/") %>% 
+    osf_download(path = "anonymized-dataset.csv", overwrite = TRUE)
 ```
 
 ## Loading the data
 
-Note that we first processed data collected via TAGS in order to obtain the tweet IDs, which we then passed to the `lookup_statuses()` rtweet function. That code is in `analysis-background_data_processing.Rmd`.
+Note that we first processed data collected via TAGS (tags.hawksey.info) in order to obtain the tweet IDs, which we then passed to the `lookup_statuses()` rtweet function. We also processed that data to join it with LIWC data and to remove identifying information.
 
-```{r, include=FALSE}
-d <- read_csv("sync-async-dataset.csv", skip=1)
-
-names(d)[1:91] <- c("user_id", "status_id", "created_at", "screen_name", "text", 
-                        "source", "display_text_width", "reply_to_status_id", "reply_to_user_id", 
-                        "reply_to_screen_name", "is_quote", "is_retweet", "favorite_count", 
-                        "retweet_count", "hashtags", "symbols", "urls_url", "urls_t.co", 
-                        "urls_expanded_url", "media_url", "media_t.co", "media_expanded_url", 
-                        "media_type", "ext_media_url", "ext_media_t.co", "ext_media_expanded_url", 
-                        "ext_media_type", "mentions_user_id", "mentions_screen_name", 
-                        "lang", "quoted_status_id", "quoted_text", "quoted_created_at", 
-                        "quoted_source", "quoted_favorite_count", "quoted_retweet_count", 
-                        "quoted_user_id", "quoted_screen_name", "quoted_name", "quoted_followers_count", 
-                        "quoted_friends_count", "quoted_statuses_count", "quoted_location", 
-                        "quoted_description", "quoted_verified", "retweet_status_id", 
-                        "retweet_text", "retweet_created_at", "retweet_source", "retweet_favorite_count", 
-                        "retweet_retweet_count", "retweet_user_id", "retweet_screen_name", 
-                        "retweet_name", "retweet_followers_count", "retweet_friends_count", 
-                        "retweet_statuses_count", "retweet_location", "retweet_description", 
-                        "retweet_verified", "place_url", "place_name", "place_full_name", 
-                        "place_type", "country", "country_code", "geo_coords", "coords_coords", 
-                        "bbox_coords", "status_url", "name", "location", "description", 
-                        "url", "protected", "followers_count", "friends_count", "listed_count", 
-                        "statuses_count", "favourites_count", "account_created_at", "verified", 
-                        "profile_url", "profile_expanded_url", "account_lang", "profile_banner_url", 
-                        "profile_background_url", "profile_image_url", "date", "is_sync", 
-                        "type")
-
-names(d)[92:ncol(d)] <- c("WC", "Analytic", "Clout", "Authentic", "Tone", "WPS", "Sixltr", 
-                                  "Dic", "function", "pronoun", "ppron", "i", "we", "you", "shehe", 
-                                  "they", "ipron", "article", "prep", "auxverb", "adverb", "conj", 
-                                  "negate", "verb", "adj", "compare", "interrog", "number", "quant", 
-                                  "affect", "posemo", "negemo", "anx", "anger", "sad", "social", 
-                                  "family", "friend", "female", "male", "cogproc", "insight", "cause", 
-                                  "discrep", "tentat", "certain", "differ", "percept", "see", "hear", 
-                                  "feel", "bio", "body", "health", "sexual", "ingest", "drives", 
-                                  "affiliation", "achieve", "power", "reward", "risk", "focuspast", 
-                                  "focuspresent", "focusfuture", "relativ", "motion", "space", 
-                                  "time", "work", "leisure", "home", "money", "relig", "death", 
-                                  "informal", "swear", "netspeak", "assent", "nonflu", "filler", 
-                                  "AllPunc", "Period", "Comma", "Colon", "SemiC", "QMark", "Exclam", 
-                                  "Dash", "Quote", "Apostro", "Parenth", "OtherP")
-
+```{r}
+d <- read_csv("anonymized-dataset.csv")
 ```
 
 ## Processing the data
@@ -106,11 +83,19 @@ reply_tweets <- d %>%
     count(reply_to_status_id) %>% 
     rename(replies_count = n)
 
-d <- d %>% 
-    mutate(mentions_count = sapply(str_split(d$mentions_screen_name, " "), length),
-           hashtags_count = sapply(str_split(d$hashtags, " "), length), 
-           urls_count = sapply(str_split(d$urls_url, " "), length)
-    )
+length_with_na <- function(x) {
+  ifelse(is.na(x), 0, map_int(x, length))
+}
+
+proc_tweets <- function(d) {
+  d %>%
+    mutate(mentions_count = length_with_na(str_split(mentions_screen_name, " ")),
+           #hashtags_count = length_with_na(str_split(hashtags, " ")),
+           #urls_count = length_with_na(str_split(urls_url, " ")),
+           is_reply = if_else(!is.na(reply_to_status_id), TRUE, FALSE))
+}
+
+d <- proc_tweets(d)
 
 is.na(d$is_sync) %>% which()  # check to make sure there are no NAs
 
@@ -125,8 +110,8 @@ prepped_data <- d %>%
            mentions_count, hashtags_count, urls_count) %>% 
     rename(Social = social,
            `Cognitive Processing` = cogproc,
-           `Positive affect` = posemo,
-           `Negative affect` = negemo,
+           `Positive Affect` = posemo,
+           `Negative Affect` = negemo,
            `Work-related Concerns` = work) %>% 
     rename(Likes = favorite_count,
            Retweets = retweet_count,
@@ -180,7 +165,7 @@ p <- ggplot(to_plot) +
 
 p
 
-ggsave("async-sync-time-series.png", width = 7, height = 5)
+ggsave("sync-async-time-series.png", width = 7, height = 5)
 ```
 
 ## Number of synchronous vs. asynchronous tweets
@@ -211,16 +196,6 @@ glmer(is_sync ~ 1 + (1|screen_name), data = d_quote, family = "poisson")
 ## Number of synchronous vs. asynchronous / original vs. nonoriginal tweeters
 
 ```{r}
-d %>% 
-    count(screen_name, sync)
-
-
-
-
-
-
-
-
 ## Number of distinct tweeters
 d %>% pull(screen_name) %>% tolower() %>% unique() %>% length()
 tweeters_df <- d %>% 
@@ -337,10 +312,6 @@ rbind(c(sync_only_original, async_only_original, both_original_),
 
 # RQs 2-4: Content, Interactions, Portals
 
-## Hotelling's test
-
-Prior to answering the second through fourth research questions, we examined whether there were multivariate differences in the three groups of outcomes (i.e., content, interaction, and portals) using a Hotelling's T-squared test.
-
 ```{r}
 prepped_data %>% 
     select(-is_sync) %>% 
@@ -373,31 +344,32 @@ exp(2.32)
 sjstats::icc(m2lmer)
 ```
 
-```{r}
-# content
-prepped_data1 <- select(prepped_data, is_sync:`Work-related Concerns`)
-m <- manova(cbind(Social, `Cognitive Processing`, `Positive affect`, `Negative affect`, `Work-related Concerns`) ~ is_sync,
-            data = prepped_data1)
-summary(m)
+Note - the below is commented out as in the review process we decided to cut the multivariate tests (due to other changes we made).
 
-fit1 = hotelling.test(. ~ is_sync, data = prepped_data1, perm = T)
-fit1
+<!-- Prior to answering the second through fourth research questions, we examined whether there were multivariate differences in the three groups of outcomes (i.e., content, interaction, and portals) using a Hotelling's T-squared test. -->
 
-# interactions
-prepped_data2 <- select(prepped_data, is_sync, Likes:Mentions)
-fit2 = hotelling.test(. ~ is_sync, data = prepped_data2)
-fit2
+<!-- ```{r, eval = FALSE} -->
+<!-- # content -->
+<!-- prepped_data1 <- select(prepped_data, is_sync:`Work-related Concerns`) -->
+<!-- fit1 = hotelling.test(. ~ is_sync, data = prepped_data1) -->
+<!-- fit1 -->
 
-# portals
-prepped_data3 <- select(prepped_data, is_sync, Hashtags, URLs)
-fit3 = hotelling.test(. ~ is_sync, data = prepped_data3)
-fit3
-```
+<!-- # interactions -->
+<!-- prepped_data2 <- select(prepped_data, is_sync, Likes:Mentions) -->
+<!-- fit2 = hotelling.test(. ~ is_sync, data = prepped_data2) -->
+<!-- fit2 -->
+
+<!-- # portals -->
+<!-- prepped_data3 <- select(prepped_data, is_sync, Hashtags, URLs) -->
+<!-- fit3 = hotelling.test(. ~ is_sync, data = prepped_data3) -->
+<!-- fit3 -->
+<!-- ``` -->
 
 This creates a table for the subsequent analyses.
 
 ```{r}
 mean_stats <- prepped_data %>% 
+    select(-screen_name) %>% 
     group_by(is_sync) %>% 
     summarize_all(funs(mean, sd, n())) %>% 
     gather(key, val, -is_sync) %>% 
@@ -424,24 +396,73 @@ mean_stats <- prepped_data %>%
     arrange(group, var)
 ```
 
-## t-tests
+Note - we replace these with multi-level LMs and GLMS, as below.
+
+<!-- ## t-tests -->
+
+<!-- ```{r} -->
+<!-- test_data <- prepped_data %>%  -->
+<!--     select(-is_sync, -screen_name) %>%  -->
+<!--     map(~ t.test(. ~ prepped_data$is_sync)) %>%  -->
+<!--     map_df(broom::tidy) %>%  -->
+<!--     mutate(var = names(prepped_data[, -c(1:2)])) -->
+
+<!-- test_data_joined <- test_data %>%  -->
+<!--     mutate(statistic = abs(statistic),  -->
+<!--            t = ifelse(p.value > .001,  -->
+<!--                       str_c(round(statistic, 3), " p = (", round(p.value, 3), ")"), -->
+<!--                       str_c(round(statistic, 3), " p < .001")), -->
+<!--            d = compute.es::tes(test_data$statistic,  -->
+<!--                                n.1 = 27361, n.2 = 8744, verbose = F)$d, -->
+<!--            d = abs(d)) %>%  -->
+<!--     select(var, t, d) -->
+<!-- ``` -->
 
 ```{r}
-test_data <- prepped_data %>% 
-    select(-is_sync) %>% 
-    map(~ t.test(. ~ prepped_data$is_sync)) %>% 
-    map_df(broom::tidy) %>% 
-    mutate(var = names(prepped_data[, -1]))
+library(lme4)
 
-test_data_joined <- test_data %>% 
-    mutate(statistic = abs(statistic), 
-           t = ifelse(p.value > .001, 
-                      str_c(round(statistic, 3), " p = (", round(p.value, 3), ")"),
-                      str_c(round(statistic, 3), " p < .001")),
-           d = compute.es::tes(test_data$statistic, 
-                               n.1 = 27361, n.2 = 8744, verbose = F)$d,
-           d = abs(d)) %>% 
-    select(var, t, d)
+m1 <- lmer(Social ~ is_sync + (1|screen_name), data = prepped_data)
+m2 <- lmer(`Cognitive Processing` ~ is_sync + (1|screen_name), data = prepped_data)
+m3 <- lmer(`Positive Affect` ~ is_sync + (1|screen_name), data = prepped_data)
+m4 <- lmer(`Negative Affect` ~ is_sync + (1|screen_name), data = prepped_data)
+m5 <- lmer(`Work-related Concerns` ~ is_sync + (1|screen_name), data = prepped_data)
+
+m7 <- glmer(Retweets ~ is_sync + (1|screen_name), family = "poisson", data = prepped_data,
+            control = glmerControl(optimizer = "nloptwrap"))
+m8 <- glmer(Replies ~ is_sync + (1|screen_name), family = "poisson", data = prepped_data)
+
+# warning for m9
+m90 <- glmer(Mentions ~ 1 + (1|screen_name), family = "poisson", data = prepped_data)
+performance:icc(m90)
+m9 <- glmer(Mentions ~ is_sync + (1|screen_name), family = "poisson", data = prepped_data,
+            control = glmerControl(
+                           optimizer = "nloptwrap"))
+
+m10 <- glmer(Hashtags ~ is_sync + (1|screen_name), family = "poisson", data = prepped_data)
+m11 <- glmer(URLs ~ is_sync + (1|screen_name), family = "poisson", data = prepped_data)
+m12 <- glmer(Likes ~ is_sync + (1|screen_name), family = "poisson", data = prepped_data)
+```
+
+```{r}
+get_stats <- function(m) {
+  x <- broom::tidy(m)
+  o <- filter(x, group == "fixed")
+  o <- mutate(o, est_se = str_c(round(estimate, 3), " (", round(std.error, 3), ")")) 
+  o <- as.vector(unlist(select(o, est_se)))
+  i <- round(as.vector(performance::icc(m))[[1]][1], 3)
+  
+  d <- data.frame(int_est_se = o[1], sync_est_se = o[2], icc = i)
+  return(d)
+}
+
+l <- list(m2, m3, m1, m5, m4, 
+          m8, m7, m9, m12, 
+          m10, m11) %>% 
+  map_df(get_stats)
+
+l %>% clipr::write_clip()
+
+EMAtools::lme.dscore(m4, data = prepped_data, type = "lme4")
 ```
 
 ## Joining Tables
@@ -455,7 +476,7 @@ combined_table <- mean_stats %>%
     arrange(group, desc(d))
 combined_table
 
-combined_table %>% write_csv("combined-table.csv")
+combined_table %>% write_csv("combined-table-for-publication.csv")
 ```
 
 ## Number of synchronous vs. asynchronous  quote tweets
@@ -470,4 +491,46 @@ sync_quote_n; async_quote_n
 
 ## test if difference is significant
 chisq.test(c(sync_quote_n, async_quote_n))
+```
+
+## creates categorical variables for sync/async; original/retweet
+
+```{r}
+
+# Variable 1, a categorical with: only sync, only async, both async and sync
+
+sync_names <- d %>% filter(is_sync == TRUE) %>% pull(screen_name) %>% unique()
+async_names <- d %>% filter(is_sync == FALSE) %>% pull(screen_name) %>% unique()
+
+both_names <- sync_names[sync_names %in% async_names]
+
+only_sync <- sync_names[!sync_names %in% both_names]
+only_async <- async_names[!async_names %in% both_names]
+
+d <- d %>% mutate(sync_categorical = ifelse(screen_name %in% both_names, "both", ifelse(screen_name %in% only_sync, "sync", "async")))
+
+# Variable 2, a categorical with: only original, only retweeting, and original and retweeting
+
+original_names <- d %>% filter(is_retweet == FALSE) %>% pull(screen_name) %>% unique()
+retweet_names <- d %>% filter(is_retweet == TRUE) %>% pull(screen_name) %>% unique()
+
+both_o_names <- original_names[original_names %in% retweet_names]
+
+only_retweet <- retweet_names[!retweet_names %in% both_o_names]
+only_original <- original_names[!original_names %in% both_o_names]
+
+both_o_names %>% length()
+
+d <- d %>% mutate(original_categorical = ifelse(screen_name %in% both_o_names, "both", ifelse(screen_name %in% only_original, "original", "retweet")))
+
+d %>% filter(original_categorical == "retweet") %>% pull(screen_name)%>% unique() %>% length()
+
+```
+
+# R version and package info
+
+Note that this is the version of R and of packages used to render this document.
+
+```{r}
+sessionInfo()
 ```
