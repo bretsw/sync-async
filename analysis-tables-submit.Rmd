@@ -119,7 +119,7 @@ prepped_data <- d %>%
     mutate(reply_to_status_id = status_id) %>% 
     left_join(reply_tweets, by = "reply_to_status_id") %>% 
     mutate(replies_count = ifelse(is.na(replies_count), 0, replies_count)) %>% 
-    select(is_sync,
+    select(screen_name, is_sync,
            social, cogproc, posemo, negemo, work,
            favorite_count, retweet_count, replies_count, 
            mentions_count, hashtags_count, urls_count) %>% 
@@ -194,11 +194,33 @@ sync_n; async_n
 #(sync_n + async_n) - (d %>% nrow())  # make sure all rows are accounted for
 ## test if difference is significant
 chisq.test(c(sync_n, async_n))
+
+
+d
+
+library(lme4)
+sjPlot::tab_model(glm(is_sync ~ 1, data = d, family = "poisson"), show.se = TRUE)
+glmer(is_sync ~ 1 + (1|screen_name), data = d, family = "poisson")
+
+d_quote <- d %>% filter(is_quote)
+d_quote
+glm(is_sync ~ 1, data = d_quote, family = "poisson")
+glmer(is_sync ~ 1 + (1|screen_name), data = d_quote, family = "poisson")
 ```
 
 ## Number of synchronous vs. asynchronous / original vs. nonoriginal tweeters
 
 ```{r}
+d %>% 
+    count(screen_name, sync)
+
+
+
+
+
+
+
+
 ## Number of distinct tweeters
 d %>% pull(screen_name) %>% tolower() %>% unique() %>% length()
 tweeters_df <- d %>% 
@@ -303,6 +325,14 @@ paste("Total Both:", both_n); paste("Both, Original Only", both_original_); past
 chisq.test(rbind(c(sync_only_original, async_only_original, both_original_),
                  c(sync_only_nonoriginal, async_only_nonoriginal, both_nonoriginal),
                  c(sync_only_both, async_only_both, both_both)))
+
+chisq.test(rbind(c(sync_only_original, async_only_original, both_original_),
+                 c(sync_only_nonoriginal, async_only_nonoriginal, both_nonoriginal),
+                 c(sync_only_both, async_only_both, both_both)))
+
+rbind(c(sync_only_original, async_only_original, both_original_),
+                 c(sync_only_nonoriginal, async_only_nonoriginal, both_nonoriginal),
+                 c(sync_only_both, async_only_both, both_both))
 ```
 
 # RQs 2-4: Content, Interactions, Portals
@@ -312,9 +342,45 @@ chisq.test(rbind(c(sync_only_original, async_only_original, both_original_),
 Prior to answering the second through fourth research questions, we examined whether there were multivariate differences in the three groups of outcomes (i.e., content, interaction, and portals) using a Hotelling's T-squared test.
 
 ```{r}
+prepped_data %>% 
+    select(-is_sync) %>% 
+    gather(key, val) %>% 
+    ggplot(aes(x = val)) +
+    geom_histogram() +
+    facet_wrap(~key)
+```
+
+```{r}
+
+safe_log <- function(x) {
+    ifelse(x == 0, 0, log(x))
+}
+
+dd <- prepped_data %>% 
+    mutate(cog_proc = safe_log(`Cognitive Processing`)) 
+hist(dd$cog_proc)
+psych::describe(dd$cog_proc)
+library(lme4)
+m1 <- lm(`Cognitive Processing` ~ is_sync, data = prepped_data)
+summary(m1)
+m1lmer <- lmer(`Cognitive Processing` ~ is_sync + (1|screen_name), data = prepped_data)
+summary(m1lmer)
+sjstats::icc(m1lmer)
+
+m2lmer <- glm(Replies ~ is_sync + (1|screen_name), family = "poisson", data = prepped_data)
+summary(m2lmer)
+exp(2.32)
+sjstats::icc(m2lmer)
+```
+
+```{r}
 # content
 prepped_data1 <- select(prepped_data, is_sync:`Work-related Concerns`)
-fit1 = hotelling.test(. ~ is_sync, data = prepped_data1)
+m <- manova(cbind(Social, `Cognitive Processing`, `Positive affect`, `Negative affect`, `Work-related Concerns`) ~ is_sync,
+            data = prepped_data1)
+summary(m)
+
+fit1 = hotelling.test(. ~ is_sync, data = prepped_data1, perm = T)
 fit1
 
 # interactions
