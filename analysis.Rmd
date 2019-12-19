@@ -146,9 +146,9 @@ p <- ggplot(to_plot) +
     geom_point(data = to_plot_async, aes(x = date_r, y = n,
                                          group = during_sync_chat,
                                          color = during_sync_chat), size = 1.25) +
-    geom_line(data = to_plot_async, aes(x = date_r, y = n,
-                                        group = during_sync_chat,
-                                        color = during_sync_chat), size = .7) +
+    # geom_line(data = to_plot_async, aes(x = date_r, y = n,
+    #                                     group = during_sync_chat,
+    #                                     color = during_sync_chat), size = .7) +
     geom_point(data = to_plot_sync, aes(x = date_r, y = n,
                                         group = during_sync_chat,
                                         color = during_sync_chat), shape = 8, size = 1.25) +
@@ -382,8 +382,8 @@ m7 <- glmer(Retweets ~ is_sync + (1|screen_name), family = "poisson", data = pre
 m8 <- glmer(Replies ~ is_sync + (1|screen_name), family = "poisson", data = prepped_data)
 
 # warning for m9
-m90 <- glmer(Mentions ~ 1 + (1|screen_name), family = "poisson", data = prepped_data)
-performance:icc(m90)
+# m90 <- glmer(Mentions ~ 1 + (1|screen_name), family = "poisson", data = prepped_data)
+# performance:icc(m90)
 m9 <- glmer(Mentions ~ is_sync + (1|screen_name), family = "poisson", data = prepped_data,
             control = glmerControl(
                            optimizer = "nloptwrap"))
@@ -391,6 +391,15 @@ m9 <- glmer(Mentions ~ is_sync + (1|screen_name), family = "poisson", data = pre
 m10 <- glmer(Hashtags ~ is_sync + (1|screen_name), family = "poisson", data = prepped_data)
 m11 <- glmer(URLs ~ is_sync + (1|screen_name), family = "poisson", data = prepped_data)
 m12 <- glmer(Likes ~ is_sync + (1|screen_name), family = "poisson", data = prepped_data)
+```
+
+```{r}
+diagnostics_func <- function(m, prepped_data) {
+  l1 <- plot(resid(m, data = prepped_data))
+  l2 <- car::leveneTest(residuals(m) ~ as.factor(prepped_data$is_sync))
+  l3 <- lattice::qqmath(m, id = .05)
+  list(l1, l2, l3)
+}
 ```
 
 ```{r}
@@ -405,14 +414,19 @@ get_stats <- function(m) {
   return(d)
 }
 
-l <- list(m2, m3, m1, m5, m4, 
+ol <- list(m2, m3, m1, m5, m4, 
           m8, m7, m9, m12, 
-          m10, m11) %>% 
+          m10, m11)
+
+l <- ol %>% 
   map_df(get_stats)
 
 l %>% clipr::write_clip()
 
 EMAtools::lme.dscore(m4, data = prepped_data, type = "lme4")
+
+ll <- ol %>% 
+  map(diagnostics_func, prepped_data = prepped_data)
 ```
 
 ## Joining Tables
