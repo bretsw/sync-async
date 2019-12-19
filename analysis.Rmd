@@ -151,7 +151,7 @@ p <- ggplot(to_plot) +
     #                                     color = during_sync_chat), size = .7) +
     geom_point(data = to_plot_sync, aes(x = date_r, y = n,
                                         group = during_sync_chat,
-                                        color = during_sync_chat), shape = 8, size = 1.25) +
+                                        color = during_sync_chat), size = 1.25) +
     scale_color_brewer("", type = "qual", palette = 2) +
     xlab(NULL) +
     ylab("Number of Tweets") +
