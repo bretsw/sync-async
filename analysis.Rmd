@@ -314,7 +314,7 @@ rbind(c(sync_only_original, async_only_original, both_original_),
 
 ```{r}
 prepped_data %>% 
-    select(-is_sync) %>% 
+    select(-is_sync, -screen_name) %>% 
     gather(key, val) %>% 
     ggplot(aes(x = val)) +
     geom_histogram() +
