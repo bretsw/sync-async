@@ -322,7 +322,6 @@ prepped_data %>%
 ```
 
 ```{r}
-
 safe_log <- function(x) {
     ifelse(x == 0, 0, log(x))
 }
@@ -331,6 +330,7 @@ dd <- prepped_data %>%
     mutate(cog_proc = safe_log(`Cognitive Processing`)) 
 hist(dd$cog_proc)
 psych::describe(dd$cog_proc)
+
 library(lme4)
 m1 <- lm(`Cognitive Processing` ~ is_sync, data = prepped_data)
 summary(m1)
@@ -338,32 +338,11 @@ m1lmer <- lmer(`Cognitive Processing` ~ is_sync + (1|screen_name), data = preppe
 summary(m1lmer)
 sjstats::icc(m1lmer)
 
-m2lmer <- glm(Replies ~ is_sync + (1|screen_name), family = "poisson", data = prepped_data)
+m2lmer <- glmer(Replies ~ is_sync + (1|screen_name), family = "poisson", data = prepped_data)
 summary(m2lmer)
 exp(2.32)
 sjstats::icc(m2lmer)
 ```
-
-Note - the below is commented out as in the review process we decided to cut the multivariate tests (due to other changes we made).
-
-<!-- Prior to answering the second through fourth research questions, we examined whether there were multivariate differences in the three groups of outcomes (i.e., content, interaction, and portals) using a Hotelling's T-squared test. -->
-
-<!-- ```{r, eval = FALSE} -->
-<!-- # content -->
-<!-- prepped_data1 <- select(prepped_data, is_sync:`Work-related Concerns`) -->
-<!-- fit1 = hotelling.test(. ~ is_sync, data = prepped_data1) -->
-<!-- fit1 -->
-
-<!-- # interactions -->
-<!-- prepped_data2 <- select(prepped_data, is_sync, Likes:Mentions) -->
-<!-- fit2 = hotelling.test(. ~ is_sync, data = prepped_data2) -->
-<!-- fit2 -->
-
-<!-- # portals -->
-<!-- prepped_data3 <- select(prepped_data, is_sync, Hashtags, URLs) -->
-<!-- fit3 = hotelling.test(. ~ is_sync, data = prepped_data3) -->
-<!-- fit3 -->
-<!-- ``` -->
 
 This creates a table for the subsequent analyses.
 
@@ -397,26 +376,6 @@ mean_stats <- prepped_data %>%
 ```
 
 Note - we replace these with multi-level LMs and GLMS, as below.
-
-<!-- ## t-tests -->
-
-<!-- ```{r} -->
-<!-- test_data <- prepped_data %>%  -->
-<!--     select(-is_sync, -screen_name) %>%  -->
-<!--     map(~ t.test(. ~ prepped_data$is_sync)) %>%  -->
-<!--     map_df(broom::tidy) %>%  -->
-<!--     mutate(var = names(prepped_data[, -c(1:2)])) -->
-
-<!-- test_data_joined <- test_data %>%  -->
-<!--     mutate(statistic = abs(statistic),  -->
-<!--            t = ifelse(p.value > .001,  -->
-<!--                       str_c(round(statistic, 3), " p = (", round(p.value, 3), ")"), -->
-<!--                       str_c(round(statistic, 3), " p < .001")), -->
-<!--            d = compute.es::tes(test_data$statistic,  -->
-<!--                                n.1 = 27361, n.2 = 8744, verbose = F)$d, -->
-<!--            d = abs(d)) %>%  -->
-<!--     select(var, t, d) -->
-<!-- ``` -->
 
 ```{r}
 library(lme4)
@@ -471,26 +430,12 @@ ol <- list(m2, m3, m1, m5, m4,
 l <- ol %>% 
   map_df(get_stats)
 
-l %>% clipr::write_clip()
+# l %>% clipr::write_clip()
 
 EMAtools::lme.dscore(m4, data = prepped_data, type = "lme4")
 
 ll <- ol %>% 
   map(diagnostics_func, prepped_data = prepped_data)
-```
-
-## Joining Tables
-
-This prints the table and also writes it to a CSV, so that it can be added to the manuscript separately.
-
-```{r}
-combined_table <- mean_stats %>% 
-    left_join(test_data_joined, by = "var") %>% 
-    select(group, var, Asynchronous, Synchronous, t, d) %>% 
-    arrange(group, desc(d))
-combined_table
-
-combined_table %>% write_csv("combined-table-for-publication.csv")
 ```
 
 ## Number of synchronous vs. asynchronous  quote tweets
